@@ -1,7 +1,3 @@
-<a><img src="https://i.pinimg.com/originals/ea/67/0e/ea670e628f60f68da5ec26c845b76bf1.jpg" title="PyMcBot" alt="PyMcBot"></a>
-
-<!-- [![PyMcBot](https://i.pinimg.com/originals/ea/67/0e/ea670e628f60f68da5ec26c845b76bf1.jpg)] -->
-
 # PyMcBot
 
 > A Discord <-> Minecraft bot built in python utilising pyCraft.
@@ -11,7 +7,7 @@
 [![Build Status](http://img.shields.io/travis/badges/badgerbadgerbadger.svg?style=flat-square)](https://travis-ci.org/badges/badgerbadgerbadger)
 
 
-[![GRAPHIC](https://imgur.com/a/mRiG8x1.png)]()
+[![GRAPHIC](https://i.imgur.com/7QNghpb.png)]()
 
 ## Table of Contents
 

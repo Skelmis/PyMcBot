@@ -21,7 +21,6 @@ bot = commands.Bot(command_prefix=get_prefix, case_insensitive=True)
 bot.config_token = secret_file['token']
 
 bot.server = config_file['server']
-print(bot.server)
 bot.channel = config_file['channel']
 bot.username = config_file['username']
 bot.password = config_file['password']

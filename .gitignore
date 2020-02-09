@@ -1,2 +1,4 @@
 .DS_Store
 cogs/__pycache__
+bot_config/token.json
+image.jpg

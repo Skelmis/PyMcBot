@@ -23,7 +23,7 @@
 
 ---
 
-## Example (Optional)
+## Example 
 
 ```python
 // code away!
@@ -87,7 +87,7 @@ $ pip install -r requirements.txt
 ## Team
 
 
-| <a href="http://unserializable.com" target="_blank">**Skelmis**</a> 
+| <a href="http://unserializable.com" target="_blank">**Skelmis**</a>
 | <a href="http://github.com/Skelmis" target="_blank">`github.com/Skelmis`</a> |
 
 - Core Developer -> Skelmis

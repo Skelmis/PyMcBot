@@ -1,0 +1,6 @@
+{
+"channel": "Your channel to send messages to (Channel Id)",
+"username" : "Generally your minecraft email not username",
+"password" : "Password for minecraft account",
+"server" : "Server to connect to"
+}

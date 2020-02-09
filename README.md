@@ -88,7 +88,7 @@ $ pip install -r requirements.txt
 
 
 | <a href="http://unserializable.com" target="_blank">**Skelmis**</a> |
-| [![Skelmis](http://https://avatars2.githubusercontent.com/u/47520067?s=460&v=4&s=200)](http://unserializable.com) |
+| [![Skelmis](http://avatars2.githubusercontent.com/u/47520067?s=460&v=4&s=200)](http://unserializable.com) |
 | <a href="http://github.com/Skelmis" target="_blank">`github.com/Skelmis`</a> |
 
 - Core Developer -> Skelmis

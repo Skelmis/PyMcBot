@@ -1,4 +1,4 @@
 .DS_Store
 cogs/__pycache__
-bot_config/alts.json
+bot_config
 accounts.txt

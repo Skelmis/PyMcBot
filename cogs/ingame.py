@@ -79,9 +79,6 @@ class Alts():
 
         def handle_join_game(join_game_packet):
             print('Connected.')
-            data = cogs._json.read_json('alts')
-            data[self.username] = self.password
-            cogs._json.write_json(data, 'alts')
 
         self.connection.register_packet_listener(
             handle_join_game, clientbound.play.JoinGamePacket)

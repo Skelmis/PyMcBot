@@ -1,5 +1,6 @@
 .DS_Store
 cogs/__pycache__
-bot_config
+bot_config/token.json
+bot_config/config.json
 accounts.txt
 pyCraft/__pycache__

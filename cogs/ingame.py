@@ -54,7 +54,12 @@ class Alts():
         packet.message = message
         self.connection.write_packet(packet)
 
+    def test():
+        def testtwo():
+            print("returns")
+
     def connect(self, server):
+
         match = re.match(r"((?P<host>[^\[\]:]+)|\[(?P<addr>[^\[\]]+)\])"
                          r"(:(?P<port>\d+))?$", server)
         if match is None:
@@ -170,6 +175,13 @@ class Ingame(commands.Cog):
         self.bot.account = Alts(self.bot.username, self.bot.password)
         thing = functools.partial(self.bot.account.connect, self.bot.server)
         blockReturn = await loop.run_in_executor(ThreadPoolExecutor(), thing)
+
+    @commands.command()
+    async def checktest(self, ctx):
+        #self.bot.account
+        #thing = functools.partial(self.bot.account.test.testtwo, self.bot.server)
+        loop = asyncio.get_event_loop()
+        blockReturn = await loop.run_in_executor(ThreadPoolExecutor(), self.bot.account.test.testtwo)
 
     @commands.command()
     @commands.is_owner()

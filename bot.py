@@ -20,6 +20,8 @@ def get_prefix(bot, message):
 bot = commands.Bot(command_prefix=get_prefix, case_insensitive=True)
 bot.config_token = secret_file['token']
 
+bot.account_dict = {}
+
 bot.server = config_file['server']
 bot.channel = config_file['channel']
 bot.username = config_file['username']

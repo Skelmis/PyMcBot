@@ -23,19 +23,48 @@ import cogs._json
 
 class Alts():
 
-    def __init__(self, bot, username, password):
+    def __init__(self, bot, username, password, channel=None):
+        """
+        Init for Alts class
+
+        Params:
+         - bot (commands.Bot object) : This is our discord bot object.
+         - username (string) : Details used to login.
+         - password (string) : Details used to login.
+
+        Optional Params:
+         - channel (int) : Can be used to overide the default channel
+                           specified in the config.json file as the
+                           place to send chat messages to.
+        """
+
         self.username = username
         self.password = password
         self.admins = ['Skelmis']
         self.loop = asyncio.get_event_loop()
         self.ingame = Ingame(bot)
+        self.discord_bot = bot
+        self.message_channel = channel or bot.channel
 
     def send_chat(self, message):
+        """
+        This sends a message packet to the connected server.
+
+        Params:
+         - message (string) : The message to send.
+        """
+
         packet = serverbound.play.ChatPacket()
         packet.message = message
         self.connection.write_packet(packet)
 
     def connect(self, server):
+        """
+        The main method of the class. Estabhlishes and maintains a connection with a server.
+
+        Params:
+         - server (string) : The server to connect to.
+        """
 
         match = re.match(r"((?P<host>[^\[\]:]+)|\[(?P<addr>[^\[\]]+)\])"
                          r"(:(?P<port>\d+))?$", server)
@@ -91,7 +120,7 @@ class Alts():
             except AttributeError:
                 pass
 
-            self.loop.create_task(self.ingame.SendChatToDiscord(string))
+            self.loop.create_task(self.ingame.SendChatToDiscord(self.message_channel, string))
 
         self.connection.register_packet_listener(
             print_chat, clientbound.play.ChatMessagePacket)
@@ -102,8 +131,61 @@ class Alts():
             time.sleep(1)
             pass
 
+    def QuietVerify(self, server):
+        """
+        Used to verify if an account works or not, silently.
+
+        This function is essentially Alts.verify(), however it
+        does it's work 'silently'. In that it simply returns
+        True or False depending on the login status.
+        Is used to test account status before attempting to
+        establish an Alts.connect() call.
+
+        Params:
+         - server (string) : The server to connect to.
+
+        Returns:
+         - bool : True or false depending on login outcome
+
+        Notes:
+        Provided handling is setup within commands, this
+        could easily be used to phase out Alts.verify().
+        """
+
+        match = re.match(r"((?P<host>[^\[\]:]+)|\[(?P<addr>[^\[\]]+)\])"
+                         r"(:(?P<port>\d+))?$", server)
+        if match is None:
+            raise ValueError("Invalid server address: '%s'." % server)
+        self.address = match.group("host") or match.group("addr")
+        self.port = int(match.group("port") or 25565)
+
+        auth_token = authentication.AuthenticationToken()
+        try:
+            auth_token.authenticate(self.username, self.password)
+        except YggdrasilError as e:
+            print(e)
+            return False
+        data = cogs._json.read_json('alts')
+        data[self.username] = self.password
+        cogs._json.write_json(data, 'alts')
+        connection = Connection(
+            self.address, self.port, auth_token=auth_token)
+
+        connection.connect()
+        connection.disconnect()
+        return True
 
     def verify(self, server):
+        """
+        Used to verify if an account works or not.
+
+        This is not a silently execution, depending on
+        the outcome it will print a message to console.
+
+        Params:
+         - server (string) : The server to connect to.
+        """
+
         match = re.match(r"((?P<host>[^\[\]:]+)|\[(?P<addr>[^\[\]]+)\])"
                          r"(:(?P<port>\d+))?$", server)
         if match is None:
@@ -134,8 +216,8 @@ class Ingame(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
-    async def SendChatToDiscord(self, message):
-        channel = self.bot.get_channel(int(self.bot.channel))
+    async def SendChatToDiscord(self, channel, message):
+        channel = self.bot.get_channel(int(channel))
         await channel.send(f"```{message}```")
 
     @commands.Cog.listener()
@@ -148,8 +230,13 @@ class Ingame(commands.Cog):
         await asyncio.sleep(10)
         loop = asyncio.get_event_loop()
         self.bot.account = Alts(self.bot, self.bot.username, self.bot.password)
-        thing = functools.partial(self.bot.account.connect, self.bot.server)
-        blockReturn = await loop.run_in_executor(ThreadPoolExecutor(), thing)
+        check = functools.partial(self.bot.account.QuietVerify, self.bot.server)
+        loginReturn = await loop.run_in_executor(ThreadPoolExecutor(), check)
+        if loginReturn == True:
+            self.bot.account_dict[self.bot.username] = self.bot.account
+
+            thing = functools.partial(self.bot.account.connect, self.bot.server)
+            blockReturn = await loop.run_in_executor(ThreadPoolExecutor(), thing)
 
     @commands.command()
     @commands.is_owner()
@@ -175,11 +262,40 @@ class Ingame(commands.Cog):
 
     @commands.command()
     @commands.is_owner()
-    async def connect(self, ctx, username, password):
+    async def connect(self, ctx, username, password, channel=None):
         loop = asyncio.get_event_loop()
-        account = Alts(username, password)
-        thing = functools.partial(account.connect, 'mc-central.net')
+        if not channel:
+            account = Alts(self.bot, username, password)
+        else:
+            account = Alts(self.bot, username, password, int(channel))
+
+        check = functools.partial(account.QuietVerify, 'mc-central.net')
+        loginReturn = await loop.run_in_executor(ThreadPoolExecutor(), check)
+        if loginReturn == True:
+            self.bot.account_dict[username] = account
+
+            thing = functools.partial(account.connect, 'mc-central.net')
+            blockReturn = await loop.run_in_executor(ThreadPoolExecutor(), thing)
+
+    @commands.command()
+    @commands.is_owner()
+    async def accounts(self, ctx):
+        accounts = ''
+        for key in self.bot.account_dict:
+            accounts += f'{key}\n'
+        await ctx.send(f'`{accounts}`')
+
+    @commands.command()
+    @commands.is_owner()
+    async def control(self, ctx, username, *, message):
+        if not username in self.bot.account_dict:
+            await ctx.send(f"`{username}` not in accounts currently logged in, please run the accounts command to see avaliable accounts to control")
+            return
+        account = self.bot.account_dict[username]
+        loop = asyncio.get_event_loop()
+        thing = functools.partial(account.send_chat, message)
         blockReturn = await loop.run_in_executor(ThreadPoolExecutor(), thing)
+        await ctx.send(f"Getting account: `{username}`\nTo send the message: `{message}`")
 
     @commands.command()
     @commands.is_owner()

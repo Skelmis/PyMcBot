@@ -12,7 +12,7 @@
 ## Table of Contents
 
 
-- [Installation](#installation)
+- [Installation](#installation-lol)
 - [Features](#features)
 - [Contributing](#contributing)
 - [Team](#team)
@@ -33,7 +33,7 @@ Simply run bot.py
 
 ---
 
-## Installation
+## Installation lol
 
 - All the `code` required to get started
 - Download this repo and follow the setup section

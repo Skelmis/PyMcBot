@@ -246,6 +246,7 @@ class Ingame(commands.Cog):
         'legit' or not. Output is saved in a json file.
 
         Format:
+        [prefix]verify
         account@gmail.com:Password
         account2@gmail.com:password
         """

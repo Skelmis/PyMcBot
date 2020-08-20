@@ -98,7 +98,7 @@ $ pip install -r requirements.txt
 ## Team
 
 
-| <a href="http://unserializable.com" target="_blank">**Skelmis**</a>
+| <a href="https://koldfusion.xyz/" target="_blank">**Skelmis**</a>
 | <a href="http://github.com/Skelmis" target="_blank">`github.com/Skelmis`</a> |
 
 - Core Developer -> Skelmis
@@ -127,4 +127,4 @@ Reach out to me at one of the following places!
 ## License
 
 - **[Apache License](http://www.apache.org/licenses/LICENSE-2.0)**
-- Copyright 2020 © <a href="http://unserializable.com" target="_blank">Skelmis</a>.
+- Copyright 2020 © <a href="https://koldfusion.xyz/" target="_blank">Skelmis</a>.

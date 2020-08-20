@@ -120,7 +120,7 @@ Reach out to me at one of the following places!
 
 - Discord : Skelmis#9135
 - Discord I reside in <a href="https://discord.gg/MgVaazZ" target="_blank">`Menudocs`</a>
-- Email <a href="mailto:<nowiki>skelmis.craft@gmail.com?subject='PyMcBot Github'">`skelmis.craft@gmail.com`</a>
+- Email <a href="mailto:<nowiki>ethan@koldfusion.xyz?subject='PyMcBot Github'">`ethan@koldfusion.xyz`</a>
 
 ---
 

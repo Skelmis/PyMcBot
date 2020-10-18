@@ -1,23 +1,33 @@
 from pyCraft.minecraft.networking.packets import Packet
 from pyCraft.minecraft.networking.types import (
-    VarInt, Integer, UnsignedByte, Position, Vector, MutableRecord,
-    attribute_alias, multi_attribute_alias,
+    VarInt,
+    Integer,
+    UnsignedByte,
+    Position,
+    Vector,
+    MutableRecord,
+    attribute_alias,
+    multi_attribute_alias,
 )
 
 
 class BlockChangePacket(Packet):
     @staticmethod
     def get_id(context):
-        return 0x0B if context.protocol_version >= 332 else \
-               0x0C if context.protocol_version >= 318 else \
-               0x0B if context.protocol_version >= 67 else \
-               0x24 if context.protocol_version >= 62 else \
-               0x23
+        return (
+            0x0B
+            if context.protocol_version >= 332
+            else 0x0C
+            if context.protocol_version >= 318
+            else 0x0B
+            if context.protocol_version >= 67
+            else 0x24
+            if context.protocol_version >= 62
+            else 0x23
+        )
 
-    packet_name = 'block change'
-    definition = [
-        {'location': Position},
-        {'block_state_id': VarInt}]
+    packet_name = "block change"
+    definition = [{"location": Position}, {"block_state_id": VarInt}]
     block_state_id = 0
 
     # For protocols < 347: an accessor for (block_state_id >> 4).
@@ -39,34 +49,40 @@ class BlockChangePacket(Packet):
         self.block_state_id = (self.block_state_id & ~0xF) | (meta & 0xF)
 
     # This alias is retained for backward compatibility.
-    blockStateId = attribute_alias('block_state_id')
+    blockStateId = attribute_alias("block_state_id")
 
 
 class MultiBlockChangePacket(Packet):
     @staticmethod
     def get_id(context):
-        return 0x0F if context.protocol_version >= 343 else \
-               0x10 if context.protocol_version >= 332 else \
-               0x11 if context.protocol_version >= 318 else \
-               0x10 if context.protocol_version >= 67 else \
-               0x22
+        return (
+            0x0F
+            if context.protocol_version >= 343
+            else 0x10
+            if context.protocol_version >= 332
+            else 0x11
+            if context.protocol_version >= 318
+            else 0x10
+            if context.protocol_version >= 67
+            else 0x22
+        )
 
-    packet_name = 'multi block change'
+    packet_name = "multi block change"
 
-    fields = 'chunk_x', 'chunk_z', 'records'
+    fields = "chunk_x", "chunk_z", "records"
 
     # Access the 'chunk_x' and 'chunk_z' fields as a tuple.
-    chunk_pos = multi_attribute_alias(tuple, 'chunk_x', 'chunk_z')
+    chunk_pos = multi_attribute_alias(tuple, "chunk_x", "chunk_z")
 
     class Record(MutableRecord):
-        __slots__ = 'x', 'y', 'z', 'block_state_id'
+        __slots__ = "x", "y", "z", "block_state_id"
 
         def __init__(self, **kwds):
             self.block_state_id = 0
             super(MultiBlockChangePacket.Record, self).__init__(**kwds)
 
         # Access the 'x', 'y', 'z' fields as a Vector of ints.
-        position = multi_attribute_alias(Vector, 'x', 'y', 'z')
+        position = multi_attribute_alias(Vector, "x", "y", "z")
 
         # For protocols < 347: an accessor for (block_state_id >> 4).
         @property
@@ -87,7 +103,7 @@ class MultiBlockChangePacket(Packet):
             self.block_state_id = self.block_state_id & ~0xF | meta & 0xF
 
         # This alias is retained for backward compatibility.
-        blockStateId = attribute_alias('block_state_id')
+        blockStateId = attribute_alias("block_state_id")
 
         def read(self, file_object):
             h_position = UnsignedByte.read(file_object)

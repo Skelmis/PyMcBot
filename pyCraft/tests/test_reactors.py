@@ -1,4 +1,5 @@
 import unittest
+
 try:
     from unittest import mock
 except ImportError:
@@ -6,7 +7,9 @@ except ImportError:
 
 from minecraft import SUPPORTED_PROTOCOL_VERSIONS
 from minecraft.networking.connection import (
-    LoginReactor, PlayingReactor, ConnectionContext
+    LoginReactor,
+    PlayingReactor,
+    ConnectionContext,
 )
 from minecraft.networking.packets import clientbound
 
@@ -15,8 +18,7 @@ max_proto_ver = max(SUPPORTED_PROTOCOL_VERSIONS)
 
 
 class LoginReactorTest(unittest.TestCase):
-
-    @mock.patch('minecraft.networking.connection.encryption')
+    @mock.patch("minecraft.networking.connection.encryption")
     def test_encryption_online_server(self, encrypt):
         connection = mock.MagicMock()
         connection.context = ConnectionContext(protocol_version=max_proto_ver)
@@ -40,7 +42,7 @@ class LoginReactorTest(unittest.TestCase):
         connection.auth_token.join.assert_called_once_with(b"hash")
         self.assertEqual(connection.write_packet.call_count, 1)
 
-    @mock.patch('minecraft.networking.connection.encryption')
+    @mock.patch("minecraft.networking.connection.encryption")
     def test_encryption_offline_server(self, encrypt):
         connection = mock.MagicMock()
         connection.context = ConnectionContext(protocol_version=max_proto_ver)
@@ -65,7 +67,6 @@ class LoginReactorTest(unittest.TestCase):
 
 
 class PlayingReactorTest(unittest.TestCase):
-
     def get_position_packet(self):
         packet = clientbound.play.PlayerPositionAndLookPacket()
         packet.x = 1.0

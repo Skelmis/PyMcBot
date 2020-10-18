@@ -1,8 +1,10 @@
 import unittest
-from minecraft.networking.types import (UUID, VarInt)
+from minecraft.networking.types import UUID, VarInt
 from minecraft.networking.packets import PacketBuffer
 from minecraft.networking.packets.clientbound.play import (
-    PlayerPositionAndLookPacket, PlayerListItemPacket, MapPacket
+    PlayerPositionAndLookPacket,
+    PlayerListItemPacket,
+    MapPacket,
 )
 from minecraft.networking.connection import ConnectionContext
 
@@ -10,10 +12,10 @@ from tests.test_packets import TEST_VERSIONS
 
 
 class PlayerPositionAndLookTest(unittest.TestCase):
-
     def test_position_and_look(self):
         current_position = PlayerPositionAndLookPacket.PositionAndLook(
-            x=999, y=999, z=999, yaw=999, pitch=999)
+            x=999, y=999, z=999, yaw=999, pitch=999
+        )
 
         packet = PlayerPositionAndLookPacket()
         packet.x = 1.0
@@ -43,10 +45,8 @@ class PlayerPositionAndLookTest(unittest.TestCase):
 
 
 class MapPacketTest(unittest.TestCase):
-
     @staticmethod
-    def make_map_packet(
-            context, width=2, height=2, offset=(2, 2), pixels=b"this"):
+    def make_map_packet(context, width=2, height=2, offset=(2, 2), pixels=b"this"):
 
         packet = MapPacket(context)
 
@@ -55,13 +55,11 @@ class MapPacketTest(unittest.TestCase):
         packet.is_tracking_position = True
         packet.is_locked = False
         packet.icons = []
-        d_name = u'Marshmallow' if context.protocol_version >= 364 else None
-        packet.icons.append(MapPacket.MapIcon(
-            type=2, direction=2, location=(1, 1), display_name=d_name
-        ))
-        packet.icons.append(MapPacket.MapIcon(
-            type=3, direction=3, location=(3, 3)
-        ))
+        d_name = u"Marshmallow" if context.protocol_version >= 364 else None
+        packet.icons.append(
+            MapPacket.MapIcon(type=2, direction=2, location=(1, 1), display_name=d_name)
+        )
+        packet.icons.append(MapPacket.MapIcon(type=3, direction=3, location=(3, 3)))
         packet.width = width
         packet.height = height if width else 0
         packet.offset = offset if width else None
@@ -99,8 +97,7 @@ class MapPacketTest(unittest.TestCase):
         self.packet_roundtrip(ConnectionContext(protocol_version=106))
         self.packet_roundtrip(ConnectionContext(protocol_version=107))
         self.packet_roundtrip(ConnectionContext(protocol_version=379))
-        self.packet_roundtrip(ConnectionContext(protocol_version=379),
-                              width=0)
+        self.packet_roundtrip(ConnectionContext(protocol_version=379), width=0)
 
     def test_map_set(self):
         map_set = MapPacket.MapSet()
@@ -152,28 +149,32 @@ class PlayerListItemTest(unittest.TestCase):
             actions=[
                 PlayerListItemPacket.AddPlayerAction(
                     uuid=fake_uuid,
-                    name='goodmonson',
+                    name="goodmonson",
                     properties=[
                         PlayerListItemPacket.PlayerProperty(
-                            name='property1', value='value1', signature=None),
+                            name="property1", value="value1", signature=None
+                        ),
                         PlayerListItemPacket.PlayerProperty(
-                            name='property2', value='value2', signature='gm')
+                            name="property2", value="value2", signature="gm"
+                        ),
                     ],
                     gamemode=42,
                     ping=69,
-                    display_name='Goodmonson' if display_name else None
+                    display_name="Goodmonson" if display_name else None,
                 ),
             ],
         )
         if display_name:
             self.assertEqual(
-                str(packet), "0x%02X PlayerListItemPacket("
+                str(packet),
+                "0x%02X PlayerListItemPacket("
                 "action_type=AddPlayerAction, actions=[AddPlayerAction("
                 "uuid=%r, name='goodmonson', properties=[PlayerProperty("
                 "name='property1', value='value1', signature=None), "
                 "PlayerProperty(name='property2', value='value2', "
                 "signature='gm')], gamemode=42, ping=69, "
-                "display_name='Goodmonson')])" % (packet.id, fake_uuid))
+                "display_name='Goodmonson')])" % (packet.id, fake_uuid),
+            )
         packet.write_fields(packet_buffer)
         packet_buffer.reset_cursor()
         return packet_buffer
@@ -191,14 +192,14 @@ class PlayerListItemTest(unittest.TestCase):
             self.assertIn(fake_uuid, player_list.players_by_uuid)
             player = player_list.players_by_uuid[fake_uuid]
 
-            self.assertEqual(player.name, 'goodmonson')
-            self.assertEqual(player.properties[0].name, 'property1')
+            self.assertEqual(player.name, "goodmonson")
+            self.assertEqual(player.properties[0].name, "property1")
             self.assertIsNone(player.properties[0].signature)
-            self.assertEqual(player.properties[1].value, 'value2')
-            self.assertEqual(player.properties[1].signature, 'gm')
+            self.assertEqual(player.properties[1].value, "value2")
+            self.assertEqual(player.properties[1].signature, "gm")
             self.assertEqual(player.gamemode, 42)
             self.assertEqual(player.ping, 69)
-            self.assertEqual(player.display_name, 'Goodmonson')
+            self.assertEqual(player.display_name, "Goodmonson")
 
     def read_and_apply(self, context, packet_buffer, player_list):
         packet_buffer.reset_cursor()
@@ -213,8 +214,7 @@ class PlayerListItemTest(unittest.TestCase):
             player_list = PlayerListItemPacket.PlayerList()
             by_uuid = player_list.players_by_uuid
 
-            packet_buffer = self.make_add_player_packet(
-                context, display_name=False)
+            packet_buffer = self.make_add_player_packet(context, display_name=False)
             self.read_and_apply(context, packet_buffer, player_list)
             self.assertEqual(by_uuid[fake_uuid].gamemode, 42)
             self.assertEqual(by_uuid[fake_uuid].ping, 69)
@@ -227,14 +227,16 @@ class PlayerListItemTest(unittest.TestCase):
                 action_type=PlayerListItemPacket.UpdateGameModeAction,
                 actions=[
                     PlayerListItemPacket.UpdateGameModeAction(
-                        uuid=fake_uuid, gamemode=43),
+                        uuid=fake_uuid, gamemode=43
+                    ),
                 ],
             )
             self.assertEqual(
-                str(packet), "0x%02X PlayerListItemPacket("
+                str(packet),
+                "0x%02X PlayerListItemPacket("
                 "action_type=UpdateGameModeAction, actions=["
-                "UpdateGameModeAction(uuid=%r, gamemode=43)])"
-                % (packet.id, fake_uuid))
+                "UpdateGameModeAction(uuid=%r, gamemode=43)])" % (packet.id, fake_uuid),
+            )
             packet.write_fields(packet_buffer)
             self.read_and_apply(context, packet_buffer, player_list)
             self.assertEqual(by_uuid[fake_uuid].gamemode, 43)
@@ -245,15 +247,15 @@ class PlayerListItemTest(unittest.TestCase):
                 context=context,
                 action_type=PlayerListItemPacket.UpdateLatencyAction,
                 actions=[
-                    PlayerListItemPacket.UpdateLatencyAction(
-                        uuid=fake_uuid, ping=70),
+                    PlayerListItemPacket.UpdateLatencyAction(uuid=fake_uuid, ping=70),
                 ],
             )
             self.assertEqual(
-                str(packet), "0x%02X PlayerListItemPacket("
+                str(packet),
+                "0x%02X PlayerListItemPacket("
                 "action_type=UpdateLatencyAction, actions=["
-                "UpdateLatencyAction(uuid=%r, ping=70)])"
-                % (packet.id, fake_uuid))
+                "UpdateLatencyAction(uuid=%r, ping=70)])" % (packet.id, fake_uuid),
+            )
             packet.write_fields(packet_buffer)
             self.read_and_apply(context, packet_buffer, player_list)
             self.assertEqual(by_uuid[fake_uuid].ping, 70)
@@ -265,17 +267,20 @@ class PlayerListItemTest(unittest.TestCase):
                 action_type=PlayerListItemPacket.UpdateDisplayNameAction,
                 actions=[
                     PlayerListItemPacket.UpdateDisplayNameAction(
-                        uuid=fake_uuid, display_name='Badmonson'),
+                        uuid=fake_uuid, display_name="Badmonson"
+                    ),
                 ],
             )
             self.assertEqual(
-                str(packet), "0x%02X PlayerListItemPacket("
+                str(packet),
+                "0x%02X PlayerListItemPacket("
                 "action_type=UpdateDisplayNameAction, actions=["
                 "UpdateDisplayNameAction(uuid=%r, display_name='Badmonson')])"
-                % (packet.id, fake_uuid))
+                % (packet.id, fake_uuid),
+            )
             packet.write_fields(packet_buffer)
             self.read_and_apply(context, packet_buffer, player_list)
-            self.assertEqual(by_uuid[fake_uuid].display_name, 'Badmonson')
+            self.assertEqual(by_uuid[fake_uuid].display_name, "Badmonson")
 
             # Remove the display name
             packet_buffer = PacketBuffer()
@@ -284,7 +289,8 @@ class PlayerListItemTest(unittest.TestCase):
                 action_type=PlayerListItemPacket.UpdateDisplayNameAction,
                 actions=[
                     PlayerListItemPacket.UpdateDisplayNameAction(
-                        uuid=fake_uuid, display_name=None),
+                        uuid=fake_uuid, display_name=None
+                    ),
                 ],
             ).write_fields(packet_buffer)
             self.read_and_apply(context, packet_buffer, player_list)
@@ -295,14 +301,14 @@ class PlayerListItemTest(unittest.TestCase):
             packet = PlayerListItemPacket(
                 context=context,
                 action_type=PlayerListItemPacket.RemovePlayerAction,
-                actions=[
-                    PlayerListItemPacket.RemovePlayerAction(uuid=fake_uuid),
-                ],
+                actions=[PlayerListItemPacket.RemovePlayerAction(uuid=fake_uuid),],
             )
             self.assertEqual(
-                str(packet), "0x%02X PlayerListItemPacket("
+                str(packet),
+                "0x%02X PlayerListItemPacket("
                 "action_type=RemovePlayerAction, actions=[RemovePlayerAction("
-                "uuid=%r)])" % (packet.id, fake_uuid))
+                "uuid=%r)])" % (packet.id, fake_uuid),
+            )
             packet.write_fields(packet_buffer)
             self.read_and_apply(context, packet_buffer, player_list)
             self.assertNotIn(fake_uuid, player_list.players_by_uuid)

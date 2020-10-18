@@ -9,11 +9,19 @@ from random import choice
 from minecraft import SUPPORTED_PROTOCOL_VERSIONS, RELEASE_PROTOCOL_VERSIONS
 from minecraft.networking.connection import ConnectionContext
 from minecraft.networking.types import (
-    VarInt, Enum, Vector, PositionAndLook, OriginPoint,
+    VarInt,
+    Enum,
+    Vector,
+    PositionAndLook,
+    OriginPoint,
 )
 from minecraft.networking.packets import (
-    Packet, PacketBuffer, PacketListener, KeepAlivePacket, serverbound,
-    clientbound
+    Packet,
+    PacketBuffer,
+    PacketListener,
+    KeepAlivePacket,
+    serverbound,
+    clientbound,
 )
 
 TEST_VERSIONS = list(RELEASE_PROTOCOL_VERSIONS)
@@ -46,10 +54,9 @@ class PacketBufferTest(unittest.TestCase):
 
 
 class PacketSerializationTest(unittest.TestCase):
-
     def test_packet(self):
         for protocol_version in TEST_VERSIONS:
-            logging.debug('protocol_version = %r' % protocol_version)
+            logging.debug("protocol_version = %r" % protocol_version)
             context = ConnectionContext(protocol_version=protocol_version)
 
             packet = serverbound.play.ChatPacket(context)
@@ -71,10 +78,10 @@ class PacketSerializationTest(unittest.TestCase):
 
     def test_compressed_packet(self):
         for protocol_version in TEST_VERSIONS:
-            logging.debug('protocol_version = %r' % protocol_version)
+            logging.debug("protocol_version = %r" % protocol_version)
             context = ConnectionContext(protocol_version=protocol_version)
 
-            msg = ''.join(choice(string.ascii_lowercase) for i in range(500))
+            msg = "".join(choice(string.ascii_lowercase) for i in range(500))
             packet = serverbound.play.ChatPacket(context)
             packet.message = msg
 
@@ -83,7 +90,7 @@ class PacketSerializationTest(unittest.TestCase):
 
     def write_read_packet(self, packet, compression_threshold):
         for protocol_version in TEST_VERSIONS:
-            logging.debug('protocol_version = %r' % protocol_version)
+            logging.debug("protocol_version = %r" % protocol_version)
             context = ConnectionContext(protocol_version=protocol_version)
 
             packet_buffer = PacketBuffer()
@@ -110,7 +117,6 @@ class PacketSerializationTest(unittest.TestCase):
 
 
 class PacketListenerTest(unittest.TestCase):
-
     def test_listener(self):
         message = "hello world"
 
@@ -118,13 +124,12 @@ class PacketListenerTest(unittest.TestCase):
             self.assertEqual(chat_packet.message, message)
 
         for protocol_version in TEST_VERSIONS:
-            logging.debug('protocol_version = %r' % protocol_version)
+            logging.debug("protocol_version = %r" % protocol_version)
             context = ConnectionContext(protocol_version=protocol_version)
 
             listener = PacketListener(test_packet, serverbound.play.ChatPacket)
 
-            packet = serverbound.play.ChatPacket(context).set_values(
-                message=message)
+            packet = serverbound.play.ChatPacket(context).set_values(message=message)
             uncalled_packet = KeepAlivePacket().set_values(keep_alive_id=0)
 
             listener.call_packet(packet)
@@ -135,11 +140,8 @@ class PacketEnumTest(unittest.TestCase):
     def test_packet_str(self):
         class ExamplePacket(Packet):
             id = 0x00
-            packet_name = 'example'
-            definition = [
-                {'alpha': VarInt},
-                {'beta': VarInt},
-                {'gamma': VarInt}]
+            packet_name = "example"
+            definition = [{"alpha": VarInt}, {"beta": VarInt}, {"gamma": VarInt}]
 
             class Alpha(Enum):
                 ZERO = 0
@@ -149,7 +151,7 @@ class PacketEnumTest(unittest.TestCase):
 
         self.assertEqual(
             str(ExamplePacket(ConnectionContext(), alpha=0, beta=0, gamma=0)),
-            '0x00 ExamplePacket(alpha=ZERO, beta=0, gamma=0)'
+            "0x00 ExamplePacket(alpha=ZERO, beta=0, gamma=0)",
         )
 
 
@@ -159,57 +161,69 @@ class TestReadWritePackets(unittest.TestCase):
     def test_explosion_packet(self):
         Record = clientbound.play.ExplosionPacket.Record
         packet = clientbound.play.ExplosionPacket(
-                    position=Vector(787, -37, 0), radius=15,
-                    records=[Record(-14, -116, -5), Record(-77, 34, -36),
-                             Record(-35, -127, 95), Record(11, 113, -8)],
-                    player_motion=Vector(4, 5, 0))
+            position=Vector(787, -37, 0),
+            radius=15,
+            records=[
+                Record(-14, -116, -5),
+                Record(-77, 34, -36),
+                Record(-35, -127, 95),
+                Record(11, 113, -8),
+            ],
+            player_motion=Vector(4, 5, 0),
+        )
 
         self.assertEqual(
             str(packet),
-            'ExplosionPacket(x=787, y=-37, z=0, radius=15, records=['
-            'Record(-14, -116, -5), Record(-77, 34, -36), '
-            'Record(-35, -127, 95), Record(11, 113, -8)], '
-            'player_motion_x=4, player_motion_y=5, player_motion_z=0)'
+            "ExplosionPacket(x=787, y=-37, z=0, radius=15, records=["
+            "Record(-14, -116, -5), Record(-77, 34, -36), "
+            "Record(-35, -127, 95), Record(11, 113, -8)], "
+            "player_motion_x=4, player_motion_y=5, player_motion_z=0)",
         )
 
         self._test_read_write_packet(packet)
 
     def test_combat_event_packet(self):
         packet = clientbound.play.CombatEventPacket(
-            event=clientbound.play.CombatEventPacket.EnterCombatEvent())
-        self.assertEqual(
-            str(packet),
-            'CombatEventPacket(event=EnterCombatEvent())'
+            event=clientbound.play.CombatEventPacket.EnterCombatEvent()
         )
+        self.assertEqual(str(packet), "CombatEventPacket(event=EnterCombatEvent())")
         self._test_read_write_packet(packet)
 
         packet = clientbound.play.CombatEventPacket(
             event=clientbound.play.CombatEventPacket.EndCombatEvent(
-                duration=415, entity_id=91063502))
+                duration=415, entity_id=91063502
+            )
+        )
         self.assertEqual(
             str(packet),
-            'CombatEventPacket(event=EndCombatEvent('
-            'duration=415, entity_id=91063502))'
+            "CombatEventPacket(event=EndCombatEvent("
+            "duration=415, entity_id=91063502))",
         )
         self._test_read_write_packet(packet)
 
         packet = clientbound.play.CombatEventPacket(
             event=clientbound.play.CombatEventPacket.EntityDeadEvent(
-                player_id=178, entity_id=36, message='RIP'))
+                player_id=178, entity_id=36, message="RIP"
+            )
+        )
         self.assertEqual(
             str(packet),
             "CombatEventPacket(event=EntityDeadEvent("
-            "player_id=178, entity_id=36, message='RIP'))"
+            "player_id=178, entity_id=36, message='RIP'))",
         )
         self._test_read_write_packet(packet)
 
     def test_multi_block_change_packet(self):
         Record = clientbound.play.MultiBlockChangePacket.Record
         packet = clientbound.play.MultiBlockChangePacket(
-                   chunk_x=167, chunk_z=15, records=[
-                     Record(x=1, y=2, z=3, blockId=56, blockMeta=13),
-                     Record(position=Vector(1, 2, 3), block_state_id=909),
-                     Record(position=(1, 2, 3), blockStateId=909)])
+            chunk_x=167,
+            chunk_z=15,
+            records=[
+                Record(x=1, y=2, z=3, blockId=56, blockMeta=13),
+                Record(position=Vector(1, 2, 3), block_state_id=909),
+                Record(position=(1, 2, 3), blockStateId=909),
+            ],
+        )
         self.assertEqual(packet.records[0].blockId, 56)
         self.assertEqual(packet.records[0].blockMeta, 13)
         self.assertEqual(packet.records[0].blockStateId, 909)
@@ -218,38 +232,51 @@ class TestReadWritePackets(unittest.TestCase):
 
         self.assertEqual(
             str(packet),
-            'MultiBlockChangePacket(chunk_x=167, chunk_z=15, records=['
-            'Record(x=1, y=2, z=3, block_state_id=909), '
-            'Record(x=1, y=2, z=3, block_state_id=909), '
-            'Record(x=1, y=2, z=3, block_state_id=909)])'
+            "MultiBlockChangePacket(chunk_x=167, chunk_z=15, records=["
+            "Record(x=1, y=2, z=3, block_state_id=909), "
+            "Record(x=1, y=2, z=3, block_state_id=909), "
+            "Record(x=1, y=2, z=3, block_state_id=909)])",
         )
 
         self._test_read_write_packet(packet)
 
     def test_spawn_object_packet(self):
         for protocol_version in TEST_VERSIONS:
-            logging.debug('protocol_version = %r' % protocol_version)
+            logging.debug("protocol_version = %r" % protocol_version)
             context = ConnectionContext(protocol_version=protocol_version)
 
             EntityType = clientbound.play.SpawnObjectPacket.field_enum(
-                            'type_id', context)
+                "type_id", context
+            )
 
             pos_look = PositionAndLook(
-                position=(Vector(68.0, 38.0, 76.0) if protocol_version >= 100
-                          else Vector(68, 38, 76)),
-                yaw=263.494, pitch=180)
+                position=(
+                    Vector(68.0, 38.0, 76.0)
+                    if protocol_version >= 100
+                    else Vector(68, 38, 76)
+                ),
+                yaw=263.494,
+                pitch=180,
+            )
             velocity = Vector(21, 55, 41)
-            entity_id, type_name, type_id = 49846, 'EGG', EntityType.EGG
+            entity_id, type_name, type_id = 49846, "EGG", EntityType.EGG
 
             packet = clientbound.play.SpawnObjectPacket(
-                        context=context,
-                        x=pos_look.x, y=pos_look.y, z=pos_look.z,
-                        yaw=pos_look.yaw, pitch=pos_look.pitch,
-                        velocity_x=velocity.x, velocity_y=velocity.y,
-                        velocity_z=velocity.z,
-                        entity_id=entity_id, type_id=type_id, data=1)
+                context=context,
+                x=pos_look.x,
+                y=pos_look.y,
+                z=pos_look.z,
+                yaw=pos_look.yaw,
+                pitch=pos_look.pitch,
+                velocity_x=velocity.x,
+                velocity_y=velocity.y,
+                velocity_z=velocity.z,
+                entity_id=entity_id,
+                type_id=type_id,
+                data=1,
+            )
             if protocol_version >= 49:
-                object_uuid = 'd9568851-85bc-4a10-8d6a-261d130626fa'
+                object_uuid = "d9568851-85bc-4a10-8d6a-261d130626fa"
                 packet.object_uuid = object_uuid
                 self.assertEqual(packet.objectUUID, object_uuid)
             self.assertEqual(packet.position_and_look, pos_look)
@@ -262,22 +289,26 @@ class TestReadWritePackets(unittest.TestCase):
                 "0x%02X SpawnObjectPacket(entity_id=49846, "
                 "object_uuid='d9568851-85bc-4a10-8d6a-261d130626fa', "
                 "type_id=EGG, x=68.0, y=38.0, z=76.0, pitch=180, yaw=263.494, "
-                "data=1, velocity_x=21, velocity_y=55, velocity_z=41)"
-                % packet.id if protocol_version >= 100 else
-                "0x%02X SpawnObjectPacket(entity_id=49846, "
+                "data=1, velocity_x=21, velocity_y=55, velocity_z=41)" % packet.id
+                if protocol_version >= 100
+                else "0x%02X SpawnObjectPacket(entity_id=49846, "
                 "object_uuid='d9568851-85bc-4a10-8d6a-261d130626fa', "
                 "type_id=EGG, x=68, y=38, z=76, pitch=180, yaw=263.494, "
-                "data=1, velocity_x=21, velocity_y=55, velocity_z=41)"
-                % packet.id if protocol_version >= 49 else
-                "0x%02X SpawnObjectPacket(entity_id=49846, type_id=EGG, "
+                "data=1, velocity_x=21, velocity_y=55, velocity_z=41)" % packet.id
+                if protocol_version >= 49
+                else "0x%02X SpawnObjectPacket(entity_id=49846, type_id=EGG, "
                 "x=68, y=38, z=76, pitch=180, yaw=263.494, data=1, "
-                "velocity_x=21, velocity_y=55, velocity_z=41)" % packet.id
+                "velocity_x=21, velocity_y=55, velocity_z=41)" % packet.id,
             )
 
             packet2 = clientbound.play.SpawnObjectPacket(
-                        context=context, position_and_look=pos_look,
-                        velocity=velocity, type=type_name,
-                        entity_id=entity_id, data=1)
+                context=context,
+                position_and_look=pos_look,
+                velocity=velocity,
+                type=type_name,
+                entity_id=entity_id,
+                data=1,
+            )
             if protocol_version >= 49:
                 packet2.object_uuid = object_uuid
             self.assertEqual(packet.__dict__, packet2.__dict__)
@@ -288,25 +319,28 @@ class TestReadWritePackets(unittest.TestCase):
             packet2.data = 0
             if protocol_version < 49:
                 del packet2.velocity
-            self._test_read_write_packet(packet, context,
-                                         yaw=360/256, pitch=360/256)
-            self._test_read_write_packet(packet2, context,
-                                         yaw=360/256, pitch=360/256)
+            self._test_read_write_packet(
+                packet, context, yaw=360 / 256, pitch=360 / 256
+            )
+            self._test_read_write_packet(
+                packet2, context, yaw=360 / 256, pitch=360 / 256
+            )
 
     def test_sound_effect_packet(self):
         for protocol_version in TEST_VERSIONS:
             context = ConnectionContext(protocol_version=protocol_version)
 
             packet = clientbound.play.SoundEffectPacket(
-                sound_id=545, effect_position=Vector(0.125, 300.0, 50.5),
-                volume=0.75)
+                sound_id=545, effect_position=Vector(0.125, 300.0, 50.5), volume=0.75
+            )
             if protocol_version >= 201:
-                packet.pitch = struct.unpack('f', struct.pack('f', 1.5))[0]
+                packet.pitch = struct.unpack("f", struct.pack("f", 1.5))[0]
             else:
                 packet.pitch = int(1.5 / 63.5) * 63.5
             if context.protocol_version >= 95:
-                packet.sound_category = \
+                packet.sound_category = (
                     clientbound.play.SoundEffectPacket.SoundCategory.NEUTRAL
+                )
 
             self._test_read_write_packet(packet, context)
 
@@ -322,9 +356,10 @@ class TestReadWritePackets(unittest.TestCase):
             self.assertEqual(
                 str(packet),
                 "0x%02X FacePlayerPacket(origin=EYES, x=1.0, y=-2.0, z=3.5, "
-                "entity_id=None)" % packet.id if protocol_version >= 353 else
-                "0x%02X FacePlayerPacket(entity_id=None, x=1.0, y=-2.0, z=3.5)"
-                % packet.id
+                "entity_id=None)" % packet.id
+                if protocol_version >= 353
+                else "0x%02X FacePlayerPacket(entity_id=None, x=1.0, y=-2.0, z=3.5)"
+                % packet.id,
             )
             self._test_read_write_packet(packet, context)
 
@@ -337,8 +372,8 @@ class TestReadWritePackets(unittest.TestCase):
                 str(packet),
                 "0x%02X FacePlayerPacket(origin=EYES, x=1.0, y=-2.0, z=3.5, "
                 "entity_id=123, entity_origin=FEET)" % packet.id
-                if protocol_version >= 353 else
-                "0x%02X FacePlayerPacket(entity_id=123)" % packet.id
+                if protocol_version >= 353
+                else "0x%02X FacePlayerPacket(entity_id=123)" % packet.id,
             )
             self._test_read_write_packet(packet, context)
 
@@ -350,7 +385,7 @@ class TestReadWritePackets(unittest.TestCase):
         """
         if context is None:
             for protocol_version in TEST_VERSIONS:
-                logging.debug('protocol_version = %r' % protocol_version)
+                logging.debug("protocol_version = %r" % protocol_version)
                 context = ConnectionContext(protocol_version=protocol_version)
                 self._test_read_write_packet(packet_in, context)
         else:
@@ -369,8 +404,8 @@ class TestReadWritePackets(unittest.TestCase):
             for packet_attr, precision in kwargs.items():
                 packet_attribute_in = packet_in.__dict__.pop(packet_attr)
                 packet_attribute_out = packet_out.__dict__.pop(packet_attr)
-                self.assertAlmostEqual(packet_attribute_in,
-                                       packet_attribute_out,
-                                       delta=precision)
+                self.assertAlmostEqual(
+                    packet_attribute_in, packet_attribute_out, delta=precision
+                )
 
             self.assertEqual(packet_in.__dict__, packet_out.__dict__)

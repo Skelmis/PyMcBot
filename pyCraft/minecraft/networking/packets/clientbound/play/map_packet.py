@@ -1,38 +1,50 @@
 from pyCraft.minecraft.networking.packets import Packet
 from pyCraft.minecraft.networking.types import (
-    VarInt, Byte, Boolean, UnsignedByte, VarIntPrefixedByteArray, String,
-    MutableRecord
+    VarInt,
+    Byte,
+    Boolean,
+    UnsignedByte,
+    VarIntPrefixedByteArray,
+    String,
+    MutableRecord,
 )
 
 
 class MapPacket(Packet):
     @staticmethod
     def get_id(context):
-        return 0x26 if context.protocol_version >= 389 else \
-               0x25 if context.protocol_version >= 345 else \
-               0x24 if context.protocol_version >= 334 else \
-               0x25 if context.protocol_version >= 318 else \
-               0x24 if context.protocol_version >= 107 else \
-               0x34
+        return (
+            0x26
+            if context.protocol_version >= 389
+            else 0x25
+            if context.protocol_version >= 345
+            else 0x24
+            if context.protocol_version >= 334
+            else 0x25
+            if context.protocol_version >= 318
+            else 0x24
+            if context.protocol_version >= 107
+            else 0x34
+        )
 
-    packet_name = 'map'
+    packet_name = "map"
 
     @property
     def fields(self):
-        fields = 'id', 'scale', 'icons', 'width', 'height', 'pixels'
+        fields = "id", "scale", "icons", "width", "height", "pixels"
         if self.context.protocol_version >= 107:
-            fields += 'is_tracking_position',
+            fields += ("is_tracking_position",)
         if self.context.protocol_version >= 452:
-            fields += 'is_locked',
+            fields += ("is_locked",)
         return fields
 
     def field_string(self, field):
-        if field == 'pixels' and isinstance(self.pixels, bytearray):
-            return 'bytearray(...)'
+        if field == "pixels" and isinstance(self.pixels, bytearray):
+            return "bytearray(...)"
         return super(MapPacket, self).field_string(field)
 
     class MapIcon(MutableRecord):
-        __slots__ = 'type', 'direction', 'location', 'display_name'
+        __slots__ = "type", "direction", "location", "display_name"
 
         def __init__(self, type, direction, location, display_name=None):
             self.type = type
@@ -41,8 +53,16 @@ class MapPacket(Packet):
             self.display_name = display_name
 
     class Map(MutableRecord):
-        __slots__ = ('id', 'scale', 'icons', 'pixels', 'width', 'height',
-                     'is_tracking_position', 'is_locked')
+        __slots__ = (
+            "id",
+            "scale",
+            "icons",
+            "pixels",
+            "width",
+            "height",
+            "is_tracking_position",
+            "is_locked",
+        )
 
         def __init__(self, id=None, scale=None, width=128, height=128):
             self.id = id
@@ -50,19 +70,19 @@ class MapPacket(Packet):
             self.icons = []
             self.width = width
             self.height = height
-            self.pixels = bytearray(0 for i in range(width*height))
+            self.pixels = bytearray(0 for i in range(width * height))
             self.is_tracking_position = True
             self.is_locked = False
 
     class MapSet(object):
-        __slots__ = 'maps_by_id'
+        __slots__ = "maps_by_id"
 
         def __init__(self, *maps):
             self.maps_by_id = {map.id: map for map in maps}
 
         def __repr__(self):
             maps = (repr(map) for map in self.maps_by_id.values())
-            return 'MapSet(%s)' % ', '.join(maps)
+            return "MapSet(%s)" % ", ".join(maps)
 
     def read(self, file_object):
         self.map_id = VarInt.read(file_object)
@@ -140,7 +160,7 @@ class MapPacket(Packet):
                 VarInt.send(icon.type, packet_buffer)
             else:
                 type_and_direction = (icon.type << 4) & 0xF0
-                type_and_direction |= (icon.direction & 0xF)
+                type_and_direction |= icon.direction & 0xF
                 UnsignedByte.send(type_and_direction, packet_buffer)
             Byte.send(icon.location[0], packet_buffer)
             Byte.send(icon.location[1], packet_buffer)

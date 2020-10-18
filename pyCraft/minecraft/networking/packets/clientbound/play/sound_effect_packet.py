@@ -1,43 +1,72 @@
 from pyCraft.minecraft.networking.packets import Packet
 from pyCraft.minecraft.networking.types import (
-    VarInt, String, Float, Byte, Type, Integer, Vector, Enum,
+    VarInt,
+    String,
+    Float,
+    Byte,
+    Type,
+    Integer,
+    Vector,
+    Enum,
 )
 
-__all__ = 'SoundEffectPacket',
+__all__ = ("SoundEffectPacket",)
 
 
 class SoundEffectPacket(Packet):
     @staticmethod
     def get_id(context):
-        return 0x51 if context.protocol_version >= 471 else \
-               0x4D if context.protocol_version >= 461 else \
-               0x4E if context.protocol_version >= 451 else \
-               0x4E if context.protocol_version >= 451 else \
-               0x4D if context.protocol_version >= 389 else \
-               0x4C if context.protocol_version >= 352 else \
-               0x4B if context.protocol_version >= 345 else \
-               0x4A if context.protocol_version >= 343 else \
-               0x49 if context.protocol_version >= 336 else \
-               0x48 if context.protocol_version >= 318 else \
-               0x46 if context.protocol_version >= 110 else \
-               0x47
+        return (
+            0x51
+            if context.protocol_version >= 471
+            else 0x4D
+            if context.protocol_version >= 461
+            else 0x4E
+            if context.protocol_version >= 451
+            else 0x4E
+            if context.protocol_version >= 451
+            else 0x4D
+            if context.protocol_version >= 389
+            else 0x4C
+            if context.protocol_version >= 352
+            else 0x4B
+            if context.protocol_version >= 345
+            else 0x4A
+            if context.protocol_version >= 343
+            else 0x49
+            if context.protocol_version >= 336
+            else 0x48
+            if context.protocol_version >= 318
+            else 0x46
+            if context.protocol_version >= 110
+            else 0x47
+        )
 
-    packet_name = 'sound effect'
+    packet_name = "sound effect"
 
     @staticmethod
     def get_definition(context):
         return [
-            ({'sound_category': VarInt}
-                if 326 > context.protocol_version >= 321 else {}),
-            {'sound_id': VarInt},
-            ({'sound_category': VarInt}
+            (
+                {"sound_category": VarInt}
+                if 326 > context.protocol_version >= 321
+                else {}
+            ),
+            {"sound_id": VarInt},
+            (
+                {"sound_category": VarInt}
                 if 95 <= context.protocol_version < 321
-                or context.protocol_version >= 326 else {}),
-            ({'parroted_entity_type': String}
-                if 326 > context.protocol_version >= 321 else {}),
-            {'effect_position': SoundEffectPacket.EffectPosition},
-            {'volume': Float},
-            {'pitch': SoundEffectPacket.Pitch},
+                or context.protocol_version >= 326
+                else {}
+            ),
+            (
+                {"parroted_entity_type": String}
+                if 326 > context.protocol_version >= 321
+                else {}
+            ),
+            {"effect_position": SoundEffectPacket.EffectPosition},
+            {"volume": Float},
+            {"pitch": SoundEffectPacket.Pitch},
         ]
 
     class SoundCategory(Enum):

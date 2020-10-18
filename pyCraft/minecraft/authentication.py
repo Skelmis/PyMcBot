@@ -16,6 +16,7 @@ class Profile(object):
     Container class for a MineCraft Selected profile.
     See: `<http://wiki.vg/Authentication>`_
     """
+
     def __init__(self, id_=None, name=None):
         self.id_ = id_
         self.name = name
@@ -25,8 +26,7 @@ class Profile(object):
         Returns ``self`` in dictionary-form, which can be serialized by json.
         """
         if self:
-            return {"id": self.id_,
-                    "name": self.name}
+            return {"id": self.id_, "name": self.name}
         else:
             raise AttributeError("Profile is not yet populated.")
 
@@ -45,6 +45,7 @@ class AuthenticationToken(object):
 
     See http://wiki.vg/Authentication.
     """
+
     AGENT_NAME = "Minecraft"
     AGENT_VERSION = 1
 
@@ -105,12 +106,9 @@ class AuthenticationToken(object):
             minecraft.exceptions.YggdrasilError
         """
         payload = {
-            "agent": {
-                "name": self.AGENT_NAME,
-                "version": self.AGENT_VERSION
-            },
+            "agent": {"name": self.AGENT_NAME, "version": self.AGENT_VERSION},
             "username": username,
-            "password": password
+            "password": password,
         }
 
         if not invalidate_previous:
@@ -154,9 +152,11 @@ class AuthenticationToken(object):
         if self.client_token is None:
             raise ValueError("'client_token' is not set!")
 
-        res = _make_request(AUTH_SERVER,
-                            "refresh", {"accessToken": self.access_token,
-                                        "clientToken": self.client_token})
+        res = _make_request(
+            AUTH_SERVER,
+            "refresh",
+            {"accessToken": self.access_token, "clientToken": self.client_token},
+        )
 
         _raise_from_response(res)
 
@@ -186,8 +186,7 @@ class AuthenticationToken(object):
         if self.access_token is None:
             raise ValueError("'access_token' not set!")
 
-        res = _make_request(AUTH_SERVER, "validate",
-                            {"accessToken": self.access_token})
+        res = _make_request(AUTH_SERVER, "validate", {"accessToken": self.access_token})
 
         # Validate returns 204 to indicate success
         # http://wiki.vg/Authentication#Response_3
@@ -211,8 +210,9 @@ class AuthenticationToken(object):
         Raises:
             minecraft.exceptions.YggdrasilError
         """
-        res = _make_request(AUTH_SERVER, "signout",
-                            {"username": username, "password": password})
+        res = _make_request(
+            AUTH_SERVER, "signout", {"username": username, "password": password}
+        )
 
         if _raise_from_response(res) is None:
             return True
@@ -228,9 +228,11 @@ class AuthenticationToken(object):
         Raises:
             :class:`minecraft.exceptions.YggdrasilError`
         """
-        res = _make_request(AUTH_SERVER, "invalidate",
-                            {"accessToken": self.access_token,
-                             "clientToken": self.client_token})
+        res = _make_request(
+            AUTH_SERVER,
+            "invalidate",
+            {"accessToken": self.access_token, "clientToken": self.client_token},
+        )
 
         if res.status_code != 204:
             _raise_from_response(res)
@@ -255,10 +257,15 @@ class AuthenticationToken(object):
             err = "AuthenticationToken hasn't been authenticated yet!"
             raise YggdrasilError(err)
 
-        res = _make_request(SESSION_SERVER, "join",
-                            {"accessToken": self.access_token,
-                             "selectedProfile": self.profile.to_dict(),
-                             "serverId": server_id})
+        res = _make_request(
+            SESSION_SERVER,
+            "join",
+            {
+                "accessToken": self.access_token,
+                "selectedProfile": self.profile.to_dict(),
+                "serverId": server_id,
+            },
+        )
 
         if res.status_code != 204:
             _raise_from_response(res)
@@ -277,8 +284,9 @@ def _make_request(server, endpoint, data):
     Returns:
         A `requests.Request` object.
     """
-    res = requests.post(server + "/" + endpoint, data=json.dumps(data),
-                        headers=HEADERS, timeout=15)
+    res = requests.post(
+        server + "/" + endpoint, data=json.dumps(data), headers=HEADERS, timeout=15
+    )
     return res
 
 
@@ -287,7 +295,7 @@ def _raise_from_response(res):
     Raises an appropriate `YggdrasilError` based on the `status_code` and
     `json` of a `requests.Request` object.
     """
-    if res.status_code == requests.codes['ok']:
+    if res.status_code == requests.codes["ok"]:
         return None
 
     exception = YggdrasilError()
@@ -299,14 +307,17 @@ def _raise_from_response(res):
             raise ValueError
     except ValueError:
         message = "[{status_code}] Malformed error message: '{response_text}'"
-        message = message.format(status_code=str(res.status_code),
-                                 response_text=res.text)
+        message = message.format(
+            status_code=str(res.status_code), response_text=res.text
+        )
         exception.args = (message,)
     else:
         message = "[{status_code}] {error}: '{error_message}'"
-        message = message.format(status_code=str(res.status_code),
-                                 error=json_resp["error"],
-                                 error_message=json_resp["errorMessage"])
+        message = message.format(
+            status_code=str(res.status_code),
+            error=json_resp["error"],
+            error_message=json_resp["errorMessage"],
+        )
         exception.args = (message,)
         exception.yggdrasil_error = json_resp["error"]
         exception.yggdrasil_message = json_resp["errorMessage"]

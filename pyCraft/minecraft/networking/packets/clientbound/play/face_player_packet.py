@@ -1,5 +1,10 @@
 from pyCraft.minecraft.networking.types import (
-    VarInt, Double, Boolean, OriginPoint, Vector, multi_attribute_alias
+    VarInt,
+    Double,
+    Boolean,
+    OriginPoint,
+    Vector,
+    multi_attribute_alias,
 )
 
 from pyCraft.minecraft.networking.packets import Packet
@@ -8,21 +13,28 @@ from pyCraft.minecraft.networking.packets import Packet
 class FacePlayerPacket(Packet):
     @staticmethod
     def get_id(context):
-        return 0x34 if context.protocol_version >= 471 else \
-               0x32 if context.protocol_version >= 451 else \
-               0x31 if context.protocol_version >= 389 else \
-               0x30
+        return (
+            0x34
+            if context.protocol_version >= 471
+            else 0x32
+            if context.protocol_version >= 451
+            else 0x31
+            if context.protocol_version >= 389
+            else 0x30
+        )
 
-    packet_name = 'face player'
+    packet_name = "face player"
 
     @property
     def fields(self):
-        return ('origin', 'x', 'y', 'z', 'entity_id', 'entity_origin') \
-               if self.context.protocol_version >= 353 else \
-               ('entity_id', 'x', 'y', 'z')
+        return (
+            ("origin", "x", "y", "z", "entity_id", "entity_origin")
+            if self.context.protocol_version >= 353
+            else ("entity_id", "x", "y", "z")
+        )
 
     # Access the 'x', 'y', 'z' fields as a Vector tuple.
-    target = multi_attribute_alias(Vector, 'x', 'y', 'z')
+    target = multi_attribute_alias(Vector, "x", "y", "z")
 
     def read(self, file_object):
         if self.context.protocol_version >= 353:

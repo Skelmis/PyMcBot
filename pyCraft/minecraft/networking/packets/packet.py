@@ -1,8 +1,6 @@
 from .packet_buffer import PacketBuffer
 from zlib import compress
-from pyCraft.minecraft.networking.types import (
-    VarInt, Enum
-)
+from pyCraft.minecraft.networking.types import VarInt, Enum
 
 
 class Packet(object):
@@ -109,12 +107,13 @@ class Packet(object):
     def __repr__(self):
         str = type(self).__name__
         if self.id is not None:
-            str = '0x%02X %s' % (self.id, str)
+            str = "0x%02X %s" % (self.id, str)
         fields = self.fields
         if fields is not None:
-            inner_str = ', '.join('%s=%s' % (a, self.field_string(a))
-                                  for a in fields if hasattr(self, a))
-            str = '%s(%s)' % (str, inner_str)
+            inner_str = ", ".join(
+                "%s=%s" % (a, self.field_string(a)) for a in fields if hasattr(self, a)
+            )
+            str = "%s(%s)" % (str, inner_str)
         return str
 
     @property
@@ -143,7 +142,7 @@ class Packet(object):
         """ The subclass of 'minecraft.networking.types.Enum' associated with
             this field, or None if there is no such class.
         """
-        enum_name = ''.join(s.capitalize() for s in field.split('_'))
+        enum_name = "".join(s.capitalize() for s in field.split("_"))
         if hasattr(cls, enum_name):
             enum_class = getattr(cls, enum_name)
             if isinstance(enum_class, type) and issubclass(enum_class, Enum):

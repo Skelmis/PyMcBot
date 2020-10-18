@@ -1,8 +1,6 @@
 from pyCraft.minecraft.networking.packets import Packet
 
-from pyCraft.minecraft.networking.types import (
-    String, Long
-)
+from pyCraft.minecraft.networking.types import String, Long
 
 
 # Formerly known as state_status_clientbound.
@@ -17,12 +15,10 @@ def get_packets(context):
 class ResponsePacket(Packet):
     id = 0x00
     packet_name = "response"
-    definition = [
-        {'json_response': String}]
+    definition = [{"json_response": String}]
 
 
 class PingResponsePacket(Packet):
     id = 0x01
     packet_name = "ping"
-    definition = [
-        {'time': Long}]
+    definition = [{"time": Long}]

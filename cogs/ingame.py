@@ -6,7 +6,12 @@ import re
 from pyCraft.minecraft import authentication
 from pyCraft.minecraft.exceptions import YggdrasilError
 from pyCraft.minecraft.networking.connection import Connection
-from pyCraft.minecraft.networking.packets import Packet, clientbound, serverbound, PacketBuffer
+from pyCraft.minecraft.networking.packets import (
+    Packet,
+    clientbound,
+    serverbound,
+    PacketBuffer,
+)
 from pyCraft.minecraft.compat import input
 
 import discord
@@ -21,8 +26,8 @@ import functools
 
 import cogs._json
 
-class Alts():
 
+class Alts:
     def __init__(self, bot, username, password, channel=None):
         """
         Init for Alts class
@@ -40,7 +45,7 @@ class Alts():
 
         self.username = username
         self.password = password
-        self.admins = ['Skelmis']
+        self.admins = ["Skelmis"]
         self.loop = asyncio.get_event_loop()
         self.ingame = Ingame(bot)
         self.discord_bot = bot
@@ -66,8 +71,10 @@ class Alts():
          - server (string) : The server to connect to.
         """
 
-        match = re.match(r"((?P<host>[^\[\]:]+)|\[(?P<addr>[^\[\]]+)\])"
-                         r"(:(?P<port>\d+))?$", server)
+        match = re.match(
+            r"((?P<host>[^\[\]:]+)|\[(?P<addr>[^\[\]]+)\])" r"(:(?P<port>\d+))?$",
+            server,
+        )
         if match is None:
             raise ValueError("Invalid server address: '%s'." % server)
         self.address = match.group("host") or match.group("addr")
@@ -80,50 +87,59 @@ class Alts():
             print(e)
             sys.exit()
         print("Logged in as %s..." % auth_token.username)
-        self.connection = Connection(
-            self.address, self.port, auth_token=auth_token)
+        self.connection = Connection(self.address, self.port, auth_token=auth_token)
 
         def handle_join_game(join_game_packet):
-            print('Connected.')
+            print("Connected.")
 
         self.connection.register_packet_listener(
-            handle_join_game, clientbound.play.JoinGamePacket)
+            handle_join_game, clientbound.play.JoinGamePacket
+        )
 
         def print_chat(chat_packet):
-            #global server_chat
-            data = "{}" .format(chat_packet.json_data)
+            # global server_chat
+            data = "{}".format(chat_packet.json_data)
             data = data.replace("true", "True")
             data = data.replace("false", "False")
             data = data.replace("none", "None")
             data = eval(data)
             list = []
-            #Mcc
+            # Mcc
             try:
-                for key in range(len(data['extra'])):
+                for key in range(len(data["extra"])):
                     try:
-                        list.append(data['extra'][key]['text'])
+                        list.append(data["extra"][key]["text"])
                     except Exception as e:
                         print(e)
             except:
                 pass
             try:
-                list.append(data['extra'][3]['extra'][0]['text'])
+                list.append(data["extra"][3]["extra"][0]["text"])
             except:
                 pass
-            string = ' '.join(list)
-            string = re.sub('\§c|\§f|\§b|\§d|\§a|\§1|\§2|\§3|\§4|\§5|\§6|\§7|\§8|\§9|\§0', '', string)
+            string = " ".join(list)
+            string = re.sub(
+                "\§c|\§f|\§b|\§d|\§a|\§1|\§2|\§3|\§4|\§5|\§6|\§7|\§8|\§9|\§0",
+                "",
+                string,
+            )
 
             try:
-                found = re.search('(.+?)  has requested that you teleport to them.', string).group(1)
+                found = re.search(
+                    "(.+?)  has requested that you teleport to them.", string
+                ).group(1)
                 if found in self.admins:
-                    self.send_chat('/tpyes')
+                    self.send_chat("/tpyes")
             except AttributeError:
                 pass
 
-            self.loop.create_task(self.ingame.SendChatToDiscord(self.message_channel, string))
+            self.loop.create_task(
+                self.ingame.SendChatToDiscord(self.message_channel, string)
+            )
 
         self.connection.register_packet_listener(
-            print_chat, clientbound.play.ChatMessagePacket)
+            print_chat, clientbound.play.ChatMessagePacket
+        )
 
         self.connection.connect()
 
@@ -152,8 +168,10 @@ class Alts():
         could easily be used to phase out Alts.verify().
         """
 
-        match = re.match(r"((?P<host>[^\[\]:]+)|\[(?P<addr>[^\[\]]+)\])"
-                         r"(:(?P<port>\d+))?$", server)
+        match = re.match(
+            r"((?P<host>[^\[\]:]+)|\[(?P<addr>[^\[\]]+)\])" r"(:(?P<port>\d+))?$",
+            server,
+        )
         if match is None:
             raise ValueError("Invalid server address: '%s'." % server)
         self.address = match.group("host") or match.group("addr")
@@ -165,11 +183,10 @@ class Alts():
         except YggdrasilError as e:
             print(e)
             return False
-        data = cogs._json.read_json('alts')
+        data = cogs._json.read_json("alts")
         data[self.username] = self.password
-        cogs._json.write_json(data, 'alts')
-        connection = Connection(
-            self.address, self.port, auth_token=auth_token)
+        cogs._json.write_json(data, "alts")
+        connection = Connection(self.address, self.port, auth_token=auth_token)
 
         connection.connect()
         connection.disconnect()
@@ -186,8 +203,10 @@ class Alts():
          - server (string) : The server to connect to.
         """
 
-        match = re.match(r"((?P<host>[^\[\]:]+)|\[(?P<addr>[^\[\]]+)\])"
-                         r"(:(?P<port>\d+))?$", server)
+        match = re.match(
+            r"((?P<host>[^\[\]:]+)|\[(?P<addr>[^\[\]]+)\])" r"(:(?P<port>\d+))?$",
+            server,
+        )
         if match is None:
             raise ValueError("Invalid server address: '%s'." % server)
         self.address = match.group("host") or match.group("addr")
@@ -199,11 +218,10 @@ class Alts():
         except YggdrasilError as e:
             print(e)
             return
-        data = cogs._json.read_json('alts')
+        data = cogs._json.read_json("alts")
         data[self.username] = self.password
-        cogs._json.write_json(data, 'alts')
-        connection = Connection(
-            self.address, self.port, auth_token=auth_token)
+        cogs._json.write_json(data, "alts")
+        connection = Connection(self.address, self.port, auth_token=auth_token)
 
         connection.connect()
         connection.disconnect()
@@ -212,7 +230,6 @@ class Alts():
 
 
 class Ingame(commands.Cog):
-
     def __init__(self, bot):
         self.bot = bot
 
@@ -251,15 +268,15 @@ class Ingame(commands.Cog):
         account2@gmail.com:password
         """
         await ctx.message.delete()
-        alts = args.split('\n')
+        alts = args.split("\n")
         print(alts)
         message = await ctx.send(content="Starting testing on the supplied accounts")
         for account in alts:
-            username, password = account.split(':')
-            await message.edit(content=f'Testing: {username}')
+            username, password = account.split(":")
+            await message.edit(content=f"Testing: {username}")
             await CheckAlt(self.bot, username, password)
             await asyncio.sleep(2.5)
-        await message.edit(content='Testing complete')
+        await message.edit(content="Testing complete")
 
     @commands.command()
     @commands.is_owner()
@@ -270,33 +287,37 @@ class Ingame(commands.Cog):
         else:
             account = Alts(self.bot, username, password, int(channel))
 
-        check = functools.partial(account.QuietVerify, 'mc-central.net')
+        check = functools.partial(account.QuietVerify, "mc-central.net")
         loginReturn = await loop.run_in_executor(ThreadPoolExecutor(), check)
         if loginReturn == True:
             self.bot.account_dict[username] = account
 
-            thing = functools.partial(account.connect, 'mc-central.net')
+            thing = functools.partial(account.connect, "mc-central.net")
             blockReturn = await loop.run_in_executor(ThreadPoolExecutor(), thing)
 
     @commands.command()
     @commands.is_owner()
     async def accounts(self, ctx):
-        accounts = ''
+        accounts = ""
         for key in self.bot.account_dict:
-            accounts += f'{key}\n'
-        await ctx.send(f'`{accounts}`')
+            accounts += f"{key}\n"
+        await ctx.send(f"`{accounts}`")
 
     @commands.command()
     @commands.is_owner()
     async def control(self, ctx, username, *, message):
         if not username in self.bot.account_dict:
-            await ctx.send(f"`{username}` not in accounts currently logged in, please run the accounts command to see avaliable accounts to control")
+            await ctx.send(
+                f"`{username}` not in accounts currently logged in, please run the accounts command to see avaliable accounts to control"
+            )
             return
         account = self.bot.account_dict[username]
         loop = asyncio.get_event_loop()
         thing = functools.partial(account.send_chat, message)
         blockReturn = await loop.run_in_executor(ThreadPoolExecutor(), thing)
-        await ctx.send(f"Getting account: `{username}`\nTo send the message: `{message}`")
+        await ctx.send(
+            f"Getting account: `{username}`\nTo send the message: `{message}`"
+        )
 
     @commands.command()
     @commands.is_owner()
@@ -310,17 +331,19 @@ class Ingame(commands.Cog):
     @commands.is_owner()
     @commands.cooldown(1, 1.5, commands.BucketType.default)
     async def reply(self, ctx, *, message):
-        message = f'/r {message}'
+        message = f"/r {message}"
         loop = asyncio.get_event_loop()
         thing = functools.partial(self.bot.account.send_chat, message)
         blockReturn = await loop.run_in_executor(ThreadPoolExecutor(), thing)
 
+
 async def CheckAlt(bot, username, password):
     loop = asyncio.get_event_loop()
     account = Alts(bot, username, password)
-    thing = functools.partial(account.verify, 'mc-central.net')
+    thing = functools.partial(account.verify, "mc-central.net")
     blockReturn = await loop.run_in_executor(ThreadPoolExecutor(), thing)
     return
+
 
 def setup(bot):
     bot.add_cog(Ingame(bot))

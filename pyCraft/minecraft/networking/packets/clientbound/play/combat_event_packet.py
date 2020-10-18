@@ -1,28 +1,38 @@
 from pyCraft.minecraft.networking.packets import Packet
 
-from pyCraft.minecraft.networking.types import (
-    VarInt, Integer, String, MutableRecord
-)
+from pyCraft.minecraft.networking.types import VarInt, Integer, String, MutableRecord
 
 
 class CombatEventPacket(Packet):
     @staticmethod
     def get_id(context):
-        return 0x32 if context.protocol_version >= 471 else \
-               0x30 if context.protocol_version >= 451 else \
-               0x2F if context.protocol_version >= 389 else \
-               0x2E if context.protocol_version >= 345 else \
-               0x2D if context.protocol_version >= 336 else \
-               0x2C if context.protocol_version >= 332 else \
-               0x2D if context.protocol_version >= 318 else \
-               0x2C if context.protocol_version >= 86 else \
-               0x2D if context.protocol_version >= 80 else \
-               0x2C if context.protocol_version >= 67 else \
-               0x42
+        return (
+            0x32
+            if context.protocol_version >= 471
+            else 0x30
+            if context.protocol_version >= 451
+            else 0x2F
+            if context.protocol_version >= 389
+            else 0x2E
+            if context.protocol_version >= 345
+            else 0x2D
+            if context.protocol_version >= 336
+            else 0x2C
+            if context.protocol_version >= 332
+            else 0x2D
+            if context.protocol_version >= 318
+            else 0x2C
+            if context.protocol_version >= 86
+            else 0x2D
+            if context.protocol_version >= 80
+            else 0x2C
+            if context.protocol_version >= 67
+            else 0x42
+        )
 
-    packet_name = 'combat event'
+    packet_name = "combat event"
 
-    fields = 'event',
+    fields = ("event",)
 
     # The abstract type of the 'event' field of this packet.
     class EventType(MutableRecord):
@@ -32,18 +42,20 @@ class CombatEventPacket(Packet):
         # Read the fields of the event (not including the ID) from the file.
         def read(self, file_object):
             raise NotImplementedError(
-                'This abstract method must be overridden in a subclass.')
+                "This abstract method must be overridden in a subclass."
+            )
 
         # Write the fields of the event (not including the ID) to the buffer.
         def write(self, packet_buffer):
             raise NotImplementedError(
-                'This abstract method must be overridden in a subclass.')
+                "This abstract method must be overridden in a subclass."
+            )
 
         @classmethod
         def type_from_id(cls, event_id):
             subcls = cls.type_from_id_dict.get(event_id)
             if subcls is None:
-                raise ValueError('Unknown combat event ID: %s.' % event_id)
+                raise ValueError("Unknown combat event ID: %s." % event_id)
             return subcls
 
     class EnterCombatEvent(EventType):
@@ -55,10 +67,11 @@ class CombatEventPacket(Packet):
 
         def write(self, packet_buffer):
             pass
+
     EventType.type_from_id_dict[EnterCombatEvent.id] = EnterCombatEvent
 
     class EndCombatEvent(EventType):
-        __slots__ = 'duration', 'entity_id'
+        __slots__ = "duration", "entity_id"
         id = 1
 
         def read(self, file_object):
@@ -68,10 +81,11 @@ class CombatEventPacket(Packet):
         def write(self, packet_buffer):
             VarInt.send(self.duration, packet_buffer)
             Integer.send(self.entity_id, packet_buffer)
+
     EventType.type_from_id_dict[EndCombatEvent.id] = EndCombatEvent
 
     class EntityDeadEvent(EventType):
-        __slots__ = 'player_id', 'entity_id', 'message'
+        __slots__ = "player_id", "entity_id", "message"
         id = 2
 
         def read(self, file_object):
@@ -83,6 +97,7 @@ class CombatEventPacket(Packet):
             VarInt.send(self.player_id, packet_buffer)
             Integer.send(self.entity_id, packet_buffer)
             String.send(self.message, packet_buffer)
+
     EventType.type_from_id_dict[EntityDeadEvent.id] = EntityDeadEvent
 
     def read(self, file_object):

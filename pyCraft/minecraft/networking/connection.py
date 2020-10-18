@@ -18,9 +18,7 @@ from .packets import clientbound, serverbound
 from . import packets
 from . import encryption
 from .. import SUPPORTED_PROTOCOL_VERSIONS, SUPPORTED_MINECRAFT_VERSIONS
-from ..exceptions import (
-    VersionMismatch, LoginDisconnect, IgnorePacket, InvalidState
-)
+from ..exceptions import VersionMismatch, LoginDisconnect, IgnorePacket, InvalidState
 
 
 STATE_STATUS = 1
@@ -32,13 +30,19 @@ class ConnectionContext(object):
     shared by the Connection class with other classes, such as Packet.
     Importantly, it can be used without knowing the interface of Connection.
     """
+
     def __init__(self, **kwds):
-        self.protocol_version = kwds.get('protocol_version')
+        self.protocol_version = kwds.get("protocol_version")
 
 
 class _ConnectionOptions(object):
-    def __init__(self, address=None, port=None, compression_threshold=-1,
-                 compression_enabled=False):
+    def __init__(
+        self,
+        address=None,
+        port=None,
+        compression_threshold=-1,
+        compression_enabled=False,
+    ):
         self.address = address
         self.port = port
         self.compression_threshold = compression_threshold
@@ -50,6 +54,7 @@ class Connection(object):
     server, it handles everything from connecting, sending packets to
     handling default network behaviour
     """
+
     def __init__(
         self,
         address,
@@ -124,7 +129,7 @@ class Connection(object):
             else:
                 proto_version = None
             if proto_version not in SUPPORTED_PROTOCOL_VERSIONS:
-                raise ValueError('Unsupported version number: %r.' % version)
+                raise ValueError("Unsupported version number: %r." % version)
             return proto_version
 
         if allowed_versions is None:
@@ -139,7 +144,8 @@ class Connection(object):
             self.default_proto_version = proto_version(initial_version)
 
         self.context = ConnectionContext(
-            protocol_version=max(self.allowed_proto_versions))
+            protocol_version=max(self.allowed_proto_versions)
+        )
 
         self.options = _ConnectionOptions()
         self.options.address = address
@@ -158,10 +164,12 @@ class Connection(object):
 
     def _start_network_thread(self):
         with self._write_lock:
-            if self.networking_thread is not None and \
-               not self.networking_thread.interrupt or \
-               self.new_networking_thread is not None:
-                raise InvalidState('A networking thread is already running.')
+            if (
+                self.networking_thread is not None
+                and not self.networking_thread.interrupt
+                or self.new_networking_thread is not None
+            ):
+                raise InvalidState("A networking thread is already running.")
             elif self.networking_thread is None:
                 self.networking_thread = NetworkingThread(self)
                 self.networking_thread.start()
@@ -169,8 +177,9 @@ class Connection(object):
                 # This thread will wait until the existing thread exits, and
                 # then set 'networking_thread' to itself and
                 # 'new_networking_thread' to None.
-                self.new_networking_thread \
-                    = NetworkingThread(self, previous=self.networking_thread)
+                self.new_networking_thread = NetworkingThread(
+                    self, previous=self.networking_thread
+                )
                 self.new_networking_thread.start()
 
     def write_packet(self, packet, force=False):
@@ -196,6 +205,7 @@ class Connection(object):
         """
         Shorthand decorator to register a function as a packet listener.
         """
+
         def listener_decorator(handler_func):
             self.register_packet_listener(handler_func, *packet_types, **kwds)
             return handler_func
@@ -206,6 +216,7 @@ class Connection(object):
         """
         Shorthand decorator to register a function as an exception handler.
         """
+
         def exception_handler_decorator(handler_func):
             self.register_exception_handler(handler_func, *exc_types, **kwds)
             return handler_func
@@ -236,12 +247,17 @@ class Connection(object):
                       'outgoing=True', the listener will be called before the
                       packet is written to the network, rather than afterwards.
         """
-        outgoing = kwds.pop('outgoing', False)
-        early = kwds.pop('early', False)
-        target = self.packet_listeners if not early and not outgoing \
-            else self.early_packet_listeners if early and not outgoing \
-            else self.outgoing_packet_listeners if not early \
+        outgoing = kwds.pop("outgoing", False)
+        early = kwds.pop("early", False)
+        target = (
+            self.packet_listeners
+            if not early and not outgoing
+            else self.early_packet_listeners
+            if early and not outgoing
+            else self.outgoing_packet_listeners
+            if not early
             else self.early_outgoing_packet_listeners
+        )
         target.append(packets.PacketListener(method, *packet_types, **kwds))
 
     def register_exception_handler(self, handler_func, *exc_types, **kwds):
@@ -275,8 +291,8 @@ class Connection(object):
         :param early: If 'True', the exception handler is registered before
         any existing exception handlers in the handling order.
         """
-        early = kwds.pop('early', False)
-        assert not kwds, 'Unexpected keyword arguments: %r' % (kwds,)
+        early = kwds.pop("early", False)
+        assert not kwds, "Unexpected keyword arguments: %r" % (kwds,)
         if early:
             self._exception_handlers.insert(0, (handler_func, exc_types))
         else:
@@ -387,10 +403,12 @@ class Connection(object):
             self._start_network_thread()
 
     def _check_connection(self):
-        if self.networking_thread is not None and \
-           not self.networking_thread.interrupt or \
-           self.new_networking_thread is not None:
-            raise InvalidState('There is an existing connection.')
+        if (
+            self.networking_thread is not None
+            and not self.networking_thread.interrupt
+            or self.new_networking_thread is not None
+        ):
+            raise InvalidState("There is an existing connection.")
 
     def _connect(self):
         # Connect a socket to the server and create a file object from the
@@ -401,15 +419,18 @@ class Connection(object):
         # the server.
         self._outgoing_packet_queue = deque()
 
-        info = socket.getaddrinfo(self.options.address, self.options.port,
-                                  0, socket.SOCK_STREAM)
+        info = socket.getaddrinfo(
+            self.options.address, self.options.port, 0, socket.SOCK_STREAM
+        )
 
         # Prefer to use IPv4 (for backward compatibility with previous
         # versions that always resolved hostnames to IPv4 addresses),
         # then IPv6, then other address families.
         def key(ai):
-            return 0 if ai[0] == socket.AF_INET else \
-                   1 if ai[0] == socket.AF_INET6 else 2
+            return (
+                0 if ai[0] == socket.AF_INET else 1 if ai[0] == socket.AF_INET6 else 2
+            )
+
         ai_faml, ai_type, ai_prot, _ai_cnam, ai_addr = min(info, key=key)
 
         self.socket = socket.socket(ai_faml, ai_type, ai_prot)
@@ -498,14 +519,20 @@ class Connection(object):
             server_protocol = SUPPORTED_MINECRAFT_VERSIONS.get(server_version)
 
         if server_protocol is None:
-            vs = 'version' if server_version is None else \
-                 ('version of %s' % server_version)
+            vs = (
+                "version"
+                if server_version is None
+                else ("version of %s" % server_version)
+            )
         else:
-            vs = ('protocol version of %d' % server_protocol) + \
-                 ('' if server_version is None else ' (%s)' % server_version)
-        ss = 'supported, but not allowed for this connection' \
-             if server_protocol in SUPPORTED_PROTOCOL_VERSIONS \
-             else 'not supported'
+            vs = ("protocol version of %d" % server_protocol) + (
+                "" if server_version is None else " (%s)" % server_version
+            )
+        ss = (
+            "supported, but not allowed for this connection"
+            if server_protocol in SUPPORTED_PROTOCOL_VERSIONS
+            else "not supported"
+        )
         raise VersionMismatch("Server's %s is %s." % (vs, ss))
 
     def _handle_exit(self):
@@ -575,7 +602,8 @@ class NetworkingThread(threading.Thread):
             # Read and react to as many as 50 packets.
             while num_packets < 50 and not self.interrupt:
                 packet = self.connection.reactor.read_packet(
-                    self.connection.file_object, timeout=read_timeout)
+                    self.connection.file_object, timeout=read_timeout
+                )
                 if not packet:
                     break
                 num_packets += 1
@@ -596,6 +624,7 @@ class PacketReactor(object):
     """
     Reads and reacts to packets
     """
+
     state_name = None
 
     # Handshaking is considered the "default" state
@@ -606,7 +635,8 @@ class PacketReactor(object):
         context = self.connection.context
         self.clientbound_packets = {
             packet.get_id(context): packet
-            for packet in self.__class__.get_clientbound_packets(context)}
+            for packet in self.__class__.get_clientbound_packets(context)
+        }
 
     def read_packet(self, stream, timeout=0):
         # Block for up to `timeout' seconds waiting for `stream' to become
@@ -620,19 +650,18 @@ class PacketReactor(object):
             packet_data.send(stream.read(length))
             # Ensure we read all the packet
             while len(packet_data.get_writable()) < length:
-                packet_data.send(
-                    stream.read(length - len(packet_data.get_writable())))
+                packet_data.send(stream.read(length - len(packet_data.get_writable())))
             packet_data.reset_cursor()
 
             if self.connection.options.compression_enabled:
                 decompressed_size = VarInt.read(packet_data)
                 if decompressed_size > 0:
                     decompressor = zlib.decompressobj()
-                    decompressed_packet = decompressor.decompress(
-                                                       packet_data.read())
-                    assert len(decompressed_packet) == decompressed_size, \
-                        'decompressed length %d, but expected %d' % \
-                        (len(decompressed_packet), decompressed_size)
+                    decompressed_packet = decompressor.decompress(packet_data.read())
+                    assert len(decompressed_packet) == decompressed_size, (
+                        "decompressed length %d, but expected %d"
+                        % (len(decompressed_packet), decompressed_size)
+                    )
                     packet_data.reset()
                     packet_data.send(decompressed_packet)
                     packet_data.reset_cursor()
@@ -675,12 +704,14 @@ class LoginReactor(PacketReactor):
 
             secret = encryption.generate_shared_secret()
             token, encrypted_secret = encryption.encrypt_token_and_secret(
-                packet.public_key, packet.verify_token, secret)
+                packet.public_key, packet.verify_token, secret
+            )
 
             # A server id of '-' means the server is in offline mode
-            if packet.server_id != '-':
+            if packet.server_id != "-":
                 server_id = encryption.generate_verification_hash(
-                    packet.server_id, secret, packet.public_key)
+                    packet.server_id, secret, packet.public_key
+                )
                 if self.connection.auth_token is not None:
                     self.connection.auth_token.join(server_id)
 
@@ -697,25 +728,29 @@ class LoginReactor(PacketReactor):
             encryptor = cipher.encryptor()
             decryptor = cipher.decryptor()
             self.connection.socket = encryption.EncryptedSocketWrapper(
-                self.connection.socket, encryptor, decryptor)
-            self.connection.file_object = \
-                encryption.EncryptedFileObjectWrapper(
-                    self.connection.file_object, decryptor)
+                self.connection.socket, encryptor, decryptor
+            )
+            self.connection.file_object = encryption.EncryptedFileObjectWrapper(
+                self.connection.file_object, decryptor
+            )
 
         elif packet.packet_name == "disconnect":
             # Receiving a disconnect packet in the login state indicates an
             # abnormal condition. Raise an exception explaining the situation.
             try:
-                msg = json.loads(packet.json_data)['text']
+                msg = json.loads(packet.json_data)["text"]
             except (ValueError, TypeError, KeyError):
                 msg = packet.json_data
-            match = re.match(r"Outdated (client! Please use|server!"
-                             r" I'm still on) (?P<ver>\S+)$", msg)
+            match = re.match(
+                r"Outdated (client! Please use|server!" r" I'm still on) (?P<ver>\S+)$",
+                msg,
+            )
             if match:
-                ver = match.group('ver')
+                ver = match.group("ver")
                 self.connection._version_mismatch(server_version=ver)
-            raise LoginDisconnect('The server rejected our login attempt '
-                                  'with: "%s".' % msg)
+            raise LoginDisconnect(
+                "The server rejected our login attempt " 'with: "%s".' % msg
+            )
 
         elif packet.packet_name == "login success":
             self.connection.reactor = PlayingReactor(self.connection)
@@ -727,7 +762,9 @@ class LoginReactor(PacketReactor):
         elif packet.packet_name == "login plugin request":
             self.connection.write_packet(
                 serverbound.login.PluginResponsePacket(
-                    message_id=packet.message_id, successful=False))
+                    message_id=packet.message_id, successful=False
+                )
+            )
 
 
 class PlayingReactor(PacketReactor):
@@ -793,7 +830,7 @@ class StatusReactor(PacketReactor):
         print(status_dict)
 
     def handle_ping(self, latency_ms):
-        print('Ping: %d ms' % latency_ms)
+        print("Ping: %d ms" % latency_ms)
 
 
 class PlayingStatusReactor(StatusReactor):
@@ -805,15 +842,15 @@ class PlayingStatusReactor(StatusReactor):
             # This can occur when we connect to a Mojang server while it is
             # still initialising, so it must not cause the client to connect
             # with the default version.
-            raise IOError('Invalid server status.')
-        elif 'version' not in status or 'protocol' not in status['version']:
+            raise IOError("Invalid server status.")
+        elif "version" not in status or "protocol" not in status["version"]:
             return self.handle_failure()
 
-        proto = status['version']['protocol']
+        proto = status["version"]["protocol"]
         if proto not in self.connection.allowed_proto_versions:
             self.connection._version_mismatch(
-                server_protocol=proto,
-                server_version=status['version'].get('name'))
+                server_protocol=proto, server_version=status["version"].get("name")
+            )
 
         self.handle_proto_version(proto)
 

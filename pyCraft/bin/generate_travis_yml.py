@@ -12,7 +12,7 @@ os.chdir(os.path.join(os.path.dirname(__file__), ".."))
 print("language: python")
 print("python: 3.5")
 print("env:")
-for env in parseconfig(None, 'tox').envlist:
+for env in parseconfig(None, "tox").envlist:
     print("  - TOX_ENV=%s" % env)
 print("install:")
 print("  - pip install tox")

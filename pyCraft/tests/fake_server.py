@@ -7,7 +7,9 @@ from minecraft.networking import packets
 from minecraft.networking.packets import clientbound
 from minecraft.networking.packets import serverbound
 from minecraft.networking.encryption import (
-    create_AES_cipher, EncryptedFileObjectWrapper, EncryptedSocketWrapper
+    create_AES_cipher,
+    EncryptedFileObjectWrapper,
+    EncryptedSocketWrapper,
 )
 
 from cryptography.hazmat.primitives.asymmetric.padding import PKCS1v15
@@ -42,6 +44,7 @@ class FakeServerDisconnect(Exception):
         the client's connection. 'message' is provided as an argument to
         'handle_play_server_disconnect' or 'handle_login_server_disconnect'.
     """
+
     def __init__(self, message=None):
         self.message = message
 
@@ -59,13 +62,20 @@ class FakeClientHandler(object):
         customise the behaviour of the server.
     """
 
-    __slots__ = 'server', 'socket', 'socket_file', 'packets', \
-                'compression_enabled', 'user_uuid', 'user_name'
+    __slots__ = (
+        "server",
+        "socket",
+        "socket_file",
+        "packets",
+        "compression_enabled",
+        "user_uuid",
+        "user_name",
+    )
 
     def __init__(self, server, socket):
         self.server = server
         self.socket = socket
-        self.socket_file = socket.makefile('rb', 0)
+        self.socket_file = socket.makefile("rb", 0)
         self.compression_enabled = False
         self.user_uuid = None
         self.user_name = None
@@ -94,40 +104,61 @@ class FakeClientHandler(object):
         # compression and encryption, if applicable, have been set up. The
         # client's LoginStartPacket is given as an argument.
         self.user_name = login_start_packet.name
-        self.user_uuid = uuid.UUID(bytes=hashlib.md5(
-            ('OfflinePlayer:%s' % self.user_name).encode('utf8')).digest())
-        self.write_packet(clientbound.login.LoginSuccessPacket(
-            UUID=str(self.user_uuid), Username=self.user_name))
+        self.user_uuid = uuid.UUID(
+            bytes=hashlib.md5(
+                ("OfflinePlayer:%s" % self.user_name).encode("utf8")
+            ).digest()
+        )
+        self.write_packet(
+            clientbound.login.LoginSuccessPacket(
+                UUID=str(self.user_uuid), Username=self.user_name
+            )
+        )
 
     def handle_play_start(self):
         # Called upon entering the play state.
-        self.write_packet(clientbound.play.JoinGamePacket(
-            entity_id=0, game_mode=0, dimension=0, difficulty=2, max_players=1,
-            level_type='default', reduced_debug_info=False, render_distance=9))
+        self.write_packet(
+            clientbound.play.JoinGamePacket(
+                entity_id=0,
+                game_mode=0,
+                dimension=0,
+                difficulty=2,
+                max_players=1,
+                level_type="default",
+                reduced_debug_info=False,
+                render_distance=9,
+            )
+        )
 
     def handle_play_packet(self, packet):
         # Called upon each packet received after handle_play_start() returns.
         if isinstance(packet, serverbound.play.ChatPacket):
             assert len(packet.message) <= packet.max_length
-            self.write_packet(clientbound.play.ChatMessagePacket(json.dumps({
-                'translate': 'chat.type.text',
-                'with': [self.username, packet.message],
-            })))
+            self.write_packet(
+                clientbound.play.ChatMessagePacket(
+                    json.dumps(
+                        {
+                            "translate": "chat.type.text",
+                            "with": [self.username, packet.message],
+                        }
+                    )
+                )
+            )
 
     def handle_status(self, request_packet):
         # Called in the first phase of the status state, to send the Response
         # packet. The client's Request packet is provided as an argument.
         packet = clientbound.status.ResponsePacket()
-        packet.json_response = json.dumps({
-            'version': {
-                'name':     self.server.minecraft_version,
-                'protocol': self.server.context.protocol_version},
-            'players': {
-                'max':      1,
-                'online':   0,
-                'sample':   []},
-            'description': {
-                'text':     'FakeServer'}})
+        packet.json_response = json.dumps(
+            {
+                "version": {
+                    "name": self.server.minecraft_version,
+                    "protocol": self.server.context.protocol_version,
+                },
+                "players": {"max": 1, "online": 0, "sample": []},
+                "description": {"text": "FakeServer"},
+            }
+        )
         self.write_packet(packet)
 
     def handle_ping(self, ping_packet):
@@ -139,15 +170,17 @@ class FakeClientHandler(object):
     def handle_login_server_disconnect(self, message):
         # Called when the server cleanly terminates the connection during
         # login, i.e. by raising FakeServerDisconnect from a handler.
-        message = 'Connection denied.' if message is None else message
-        self.write_packet(clientbound.login.DisconnectPacket(
-            json_data=json.dumps({'text': message})))
+        message = "Connection denied." if message is None else message
+        self.write_packet(
+            clientbound.login.DisconnectPacket(json_data=json.dumps({"text": message}))
+        )
 
     def handle_play_server_disconnect(self, message):
         # As 'handle_login_server_disconnect', but for the play state.
-        message = 'Disconnected.' if message is None else message
-        self.write_packet(clientbound.play.DisconnectPacket(
-            json_data=json.dumps({'text': message})))
+        message = "Disconnected." if message is None else message
+        self.write_packet(
+            clientbound.play.DisconnectPacket(json_data=json.dumps({"text": message}))
+        )
 
     def handle_play_client_disconnect(self):
         # Called when the client cleanly terminates the connection during play.
@@ -156,10 +189,15 @@ class FakeClientHandler(object):
     def write_packet(self, packet):
         # Send and log a clientbound packet.
         packet.context = self.server.context
-        logging.debug('[S-> ] %s' % packet)
-        packet.write(self.socket, **(
-            {'compression_threshold': self.server.compression_threshold}
-            if self.compression_enabled else {}))
+        logging.debug("[S-> ] %s" % packet)
+        packet.write(
+            self.socket,
+            **(
+                {"compression_threshold": self.server.compression_threshold}
+                if self.compression_enabled
+                else {}
+            )
+        )
 
     def read_packet(self):
         # Read and log a serverbound packet from the client, or raises
@@ -171,7 +209,7 @@ class FakeClientHandler(object):
             packet.read(buffer)
         else:
             packet = packets.Packet(self.server.context, id=packet_id)
-        logging.debug('[ ->S] %s' % packet)
+        logging.debug("[ ->S] %s" % packet)
         return packet
 
     def _run_handshake(self):
@@ -187,7 +225,7 @@ class FakeClientHandler(object):
             elif packet.next_state == 2:
                 self._run_handshake_play(packet)
             else:
-                raise AssertionError('Unknown state: %s' % packet.next_state)
+                raise AssertionError("Unknown state: %s" % packet.next_state)
         except FakeServerDisconnect:
             pass
 
@@ -198,11 +236,9 @@ class FakeClientHandler(object):
         if packet.protocol_version == self.server.context.protocol_version:
             return self._run_login()
         if packet.protocol_version < self.server.context.protocol_version:
-            msg = 'Outdated client! Please use %s' \
-                  % self.server.minecraft_version
+            msg = "Outdated client! Please use %s" % self.server.minecraft_version
         else:
-            msg = "Outdated server! I'm still on %s" \
-                  % self.server.minecraft_version
+            msg = "Outdated server! I'm still on %s" % self.server.minecraft_version
         self.handle_login_server_disconnect(msg)
 
     def _run_login(self):
@@ -215,8 +251,11 @@ class FakeClientHandler(object):
             self._run_login_encryption()
 
         if self.server.compression_threshold is not None:
-            self.write_packet(clientbound.login.SetCompressionPacket(
-                threshold=self.server.compression_threshold))
+            self.write_packet(
+                clientbound.login.SetCompressionPacket(
+                    threshold=self.server.compression_threshold
+                )
+            )
             self.compression_enabled = True
 
         try:
@@ -228,10 +267,14 @@ class FakeClientHandler(object):
 
     def _run_login_encryption(self):
         # Set up protocol encryption with the client, then return.
-        server_token = b'\x89\x82\x9a\x01'  # Guaranteed to be random.
-        self.write_packet(clientbound.login.EncryptionRequestPacket(
-            server_id='', verify_token=server_token,
-            public_key=self.server.public_key_bytes))
+        server_token = b"\x89\x82\x9a\x01"  # Guaranteed to be random.
+        self.write_packet(
+            clientbound.login.EncryptionRequestPacket(
+                server_id="",
+                verify_token=server_token,
+                public_key=self.server.public_key_bytes,
+            )
+        )
 
         packet = self.read_packet()
         assert isinstance(packet, serverbound.login.EncryptionResponsePacket)
@@ -294,8 +337,7 @@ class FakeClientHandler(object):
             data_length = types.VarInt.read(buffer)
             if data_length > 0:
                 data = zlib.decompress(buffer.read())
-                assert len(data) == data_length, \
-                    '%s != %s' % (len(data), data_length)
+                assert len(data) == data_length, "%s != %s" % (len(data), data_length)
                 buffer.reset()
                 buffer.send(data)
                 buffer.reset_cursor()
@@ -325,21 +367,39 @@ class FakeServer(object):
         client sessions; otherwise, if it is None, encryption is disabled.
     """
 
-    __slots__ = 'listen_socket', 'compression_threshold', 'context', \
-                'minecraft_version', 'client_handler_type', 'server_type', \
-                'packets_handshake', 'packets_login', 'packets_playing', \
-                'packets_status', 'lock', 'stopping', 'private_key', \
-                'public_key_bytes', 'test_case',
+    __slots__ = (
+        "listen_socket",
+        "compression_threshold",
+        "context",
+        "minecraft_version",
+        "client_handler_type",
+        "server_type",
+        "packets_handshake",
+        "packets_login",
+        "packets_playing",
+        "packets_status",
+        "lock",
+        "stopping",
+        "private_key",
+        "public_key_bytes",
+        "test_case",
+    )
 
-    def __init__(self, minecraft_version=None, compression_threshold=None,
-                 client_handler_type=FakeClientHandler, private_key=None,
-                 public_key_bytes=None, test_case=None):
+    def __init__(
+        self,
+        minecraft_version=None,
+        compression_threshold=None,
+        client_handler_type=FakeClientHandler,
+        private_key=None,
+        public_key_bytes=None,
+        test_case=None,
+    ):
         if minecraft_version is None:
             minecraft_version = VERSIONS[-1][0]
 
         if isinstance(minecraft_version, Integral):
             proto = minecraft_version
-            minecraft_version = 'FakeVersion%d' % proto
+            minecraft_version = "FakeVersion%d" % proto
             for ver, ver_proto in SUPPORTED_MINECRAFT_VERSIONS.items():
                 if ver_proto == proto:
                     minecraft_version = ver
@@ -355,24 +415,28 @@ class FakeServer(object):
         self.test_case = test_case
 
         self.packets_handshake = {
-            p.get_id(self.context): p for p in
-            serverbound.handshake.get_packets(self.context)}
+            p.get_id(self.context): p
+            for p in serverbound.handshake.get_packets(self.context)
+        }
 
         self.packets_login = {
-            p.get_id(self.context): p for p in
-            serverbound.login.get_packets(self.context)}
+            p.get_id(self.context): p
+            for p in serverbound.login.get_packets(self.context)
+        }
 
         self.packets_playing = {
-            p.get_id(self.context): p for p in
-            serverbound.play.get_packets(self.context)}
+            p.get_id(self.context): p
+            for p in serverbound.play.get_packets(self.context)
+        }
 
         self.packets_status = {
-            p.get_id(self.context): p for p in
-            serverbound.status.get_packets(self.context)}
+            p.get_id(self.context): p
+            for p in serverbound.status.get_packets(self.context)
+        }
 
         self.listen_socket = socket.socket()
         self.listen_socket.settimeout(0.1)
-        self.listen_socket.bind(('localhost', 0))
+        self.listen_socket.bind(("localhost", 0))
         self.listen_socket.listen(0)
 
         self.lock = threading.Lock()
@@ -385,14 +449,14 @@ class FakeServer(object):
             while True:
                 try:
                     client_socket, addr = self.listen_socket.accept()
-                    logging.debug('[ ++ ] Client %s connected.' % (addr,))
+                    logging.debug("[ ++ ] Client %s connected." % (addr,))
                     self.client_handler_type(self, client_socket).run()
-                    logging.debug('[ -- ] Client %s disconnected.' % (addr,))
+                    logging.debug("[ -- ] Client %s disconnected." % (addr,))
                 except socket.timeout:
                     pass
                 with self.lock:
                     if self.stopping:
-                        logging.debug('[ ** ] Server stopped normally.')
+                        logging.debug("[ ** ] Server stopped normally.")
                         break
         finally:
             self.listen_socket.close()
@@ -456,22 +520,33 @@ class _FakeServerTest(unittest.TestCase):
 
         def handle_join_game(packet):
             game_joined[0] = True
+
         client.register_packet_listener(
-            handle_join_game, clientbound.play.JoinGamePacket)
+            handle_join_game, clientbound.play.JoinGamePacket
+        )
 
         def handle_disconnect(packet):
-            assert game_joined[0], 'JoinGamePacket not received.'
+            assert game_joined[0], "JoinGamePacket not received."
             raise FakeServerTestSuccess
+
         client.register_packet_listener(
-            handle_disconnect, clientbound.play.DisconnectPacket)
+            handle_disconnect, clientbound.play.DisconnectPacket
+        )
 
         client.connect()
 
-    def _test_connect(self, client_versions=None, server_version=None,
-                      server_type=None, client_handler_type=None,
-                      connection_type=None, compression_threshold=None,
-                      private_key=None, public_key_bytes=None,
-                      ignore_extra_exceptions=None):
+    def _test_connect(
+        self,
+        client_versions=None,
+        server_version=None,
+        server_type=None,
+        client_handler_type=None,
+        connection_type=None,
+        compression_threshold=None,
+        private_key=None,
+        public_key_bytes=None,
+        ignore_extra_exceptions=None,
+    ):
         if client_versions is None:
             client_versions = self.client_versions
         if server_version is None:
@@ -491,12 +566,14 @@ class _FakeServerTest(unittest.TestCase):
         if ignore_extra_exceptions is None:
             ignore_extra_exceptions = self.ignore_extra_exceptions
 
-        server = server_type(minecraft_version=server_version,
-                             compression_threshold=compression_threshold,
-                             client_handler_type=client_handler_type,
-                             private_key=private_key,
-                             public_key_bytes=public_key_bytes,
-                             test_case=self)
+        server = server_type(
+            minecraft_version=server_version,
+            compression_threshold=compression_threshold,
+            client_handler_type=client_handler_type,
+            private_key=private_key,
+            public_key_bytes=public_key_bytes,
+            test_case=self,
+        )
         addr = "localhost"
         port = server.listen_socket.getsockname()[1]
 
@@ -513,19 +590,29 @@ class _FakeServerTest(unittest.TestCase):
                 cond.notify_all()
 
         client = connection_type(
-            addr, port, username='TestUser', allowed_versions=client_versions,
-            handle_exception=handle_client_exception)
+            addr,
+            port,
+            username="TestUser",
+            allowed_versions=client_versions,
+            handle_exception=handle_client_exception,
+        )
         client.register_packet_listener(
-            lambda packet: logging.debug('[ ->C] %s' % packet),
-            packets.Packet, early=True)
+            lambda packet: logging.debug("[ ->C] %s" % packet),
+            packets.Packet,
+            early=True,
+        )
         client.register_packet_listener(
-            lambda packet: logging.debug('[C-> ] %s' % packet),
-            packets.Packet, early=True, outgoing=True)
+            lambda packet: logging.debug("[C-> ] %s" % packet),
+            packets.Packet,
+            early=True,
+            outgoing=True,
+        )
 
         server_thread = threading.Thread(
-            name='FakeServer',
+            name="FakeServer",
             target=self._test_connect_server,
-            args=(server, cond, server_lock, server_exc_info))
+            args=(server, cond, server_lock, server_exc_info),
+        )
         server_thread.daemon = True
 
         errors = []
@@ -542,42 +629,45 @@ class _FakeServerTest(unittest.TestCase):
                     if thread is not None and thread.is_alive():
                         thread.join(THREAD_TIMEOUT_S)
                     if thread is not None and thread.is_alive():
-                        errors.append({
-                            'msg': 'Thread "%s" timed out.' % thread.name})
+                        errors.append({"msg": 'Thread "%s" timed out.' % thread.name})
                 if client_exc_info[0] is None:
                     client_exc_info[0] = client.exc_info
         except Exception:
-            errors.insert(0, {
-                'msg': 'Exception in main thread',
-                'exc_info': sys.exc_info()})
+            errors.insert(
+                0, {"msg": "Exception in main thread", "exc_info": sys.exc_info()}
+            )
         else:
             timeout = True
             for lock, [exc_info], thread_name in (
-                (client_lock, client_exc_info, 'client thread'),
-                (server_lock, server_exc_info, 'server thread')
+                (client_lock, client_exc_info, "client thread"),
+                (server_lock, server_exc_info, "server thread"),
             ):
                 with lock:
                     if exc_info is None:
                         continue
                     timeout = False
                     if not issubclass(exc_info[0], FakeServerTestSuccess):
-                        errors.insert(0, {
-                            'msg': 'Exception in %s:' % thread_name,
-                            'exc_info': exc_info})
+                        errors.insert(
+                            0,
+                            {
+                                "msg": "Exception in %s:" % thread_name,
+                                "exc_info": exc_info,
+                            },
+                        )
                     elif ignore_extra_exceptions:
                         del errors[:]
                         break
             if timeout:
-                errors.insert(0, {'msg': 'Test timed out.'})
+                errors.insert(0, {"msg": "Test timed out."})
 
         if len(errors) > 1:
             for error in errors:
                 logging.error(**error)
-            self.fail('Multiple errors: see logging output.')
-        elif errors and 'exc_info' in errors[0]:
-            raise_(*errors[0]['exc_info'])
+            self.fail("Multiple errors: see logging output.")
+        elif errors and "exc_info" in errors[0]:
+            raise_(*errors[0]["exc_info"])
         elif errors:
-            self.fail(errors[0]['msg'])
+            self.fail(errors[0]["msg"])
 
     def _test_connect_server(self, server, cond, server_lock, server_exc_info):
         exc_info = None

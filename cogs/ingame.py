@@ -1,348 +1,217 @@
-from __future__ import print_function
-
-import sys
-import re
-
-from pyCraft.minecraft import authentication
-from pyCraft.minecraft.exceptions import YggdrasilError
-from pyCraft.minecraft.networking.connection import Connection
-from pyCraft.minecraft.networking.packets import (
-    Packet,
-    clientbound,
-    serverbound,
-    PacketBuffer,
-)
-from pyCraft.minecraft.compat import input
+import asyncio
+import concurrent
 
 import discord
 from discord.ext import commands
-from discord.ext.tasks import loop
-import os
-from concurrent.futures import ThreadPoolExecutor
-import asyncio
+from concurrent.futures.thread import ThreadPoolExecutor
 
-import time
-import functools
+from minecraft.exceptions import ProxyConnection, YggdrasilError
 
-import cogs._json
-
-
-class Alts:
-    def __init__(self, bot, username, password, channel=None):
-        """
-        Init for Alts class
-
-        Params:
-         - bot (commands.Bot object) : This is our discord bot object.
-         - username (string) : Details used to login.
-         - password (string) : Details used to login.
-
-        Optional Params:
-         - channel (int) : Can be used to overide the default channel
-                           specified in the config.json file as the
-                           place to send chat messages to.
-        """
-
-        self.username = username
-        self.password = password
-        self.admins = ["Skelmis"]
-        self.loop = asyncio.get_event_loop()
-        self.ingame = Ingame(bot)
-        self.discord_bot = bot
-        self.message_channel = channel or bot.channel
-
-    def send_chat(self, message):
-        """
-        This sends a message packet to the connected server.
-
-        Params:
-         - message (string) : The message to send.
-        """
-
-        packet = serverbound.play.ChatPacket()
-        packet.message = message
-        self.connection.write_packet(packet)
-
-    def connect(self, server):
-        """
-        The main method of the class. Estabhlishes and maintains a connection with a server.
-
-        Params:
-         - server (string) : The server to connect to.
-        """
-
-        match = re.match(
-            r"((?P<host>[^\[\]:]+)|\[(?P<addr>[^\[\]]+)\])" r"(:(?P<port>\d+))?$",
-            server,
-        )
-        if match is None:
-            raise ValueError("Invalid server address: '%s'." % server)
-        self.address = match.group("host") or match.group("addr")
-        self.port = int(match.group("port") or 25565)
-
-        auth_token = authentication.AuthenticationToken()
-        try:
-            auth_token.authenticate(self.username, self.password)
-        except YggdrasilError as e:
-            print(e)
-            sys.exit()
-        print("Logged in as %s..." % auth_token.username)
-        self.connection = Connection(self.address, self.port, auth_token=auth_token)
-
-        def handle_join_game(join_game_packet):
-            print("Connected.")
-
-        self.connection.register_packet_listener(
-            handle_join_game, clientbound.play.JoinGamePacket
-        )
-
-        def print_chat(chat_packet):
-            # global server_chat
-            data = "{}".format(chat_packet.json_data)
-            data = data.replace("true", "True")
-            data = data.replace("false", "False")
-            data = data.replace("none", "None")
-            data = eval(data)
-            list = []
-            # Mcc
-            try:
-                for key in range(len(data["extra"])):
-                    try:
-                        list.append(data["extra"][key]["text"])
-                    except Exception as e:
-                        print(e)
-            except:
-                pass
-            try:
-                list.append(data["extra"][3]["extra"][0]["text"])
-            except:
-                pass
-            string = " ".join(list)
-            string = re.sub(
-                "\§c|\§f|\§b|\§d|\§a|\§1|\§2|\§3|\§4|\§5|\§6|\§7|\§8|\§9|\§0",
-                "",
-                string,
-            )
-
-            try:
-                found = re.search(
-                    "(.+?)  has requested that you teleport to them.", string
-                ).group(1)
-                if found in self.admins:
-                    self.send_chat("/tpyes")
-            except AttributeError:
-                pass
-
-            self.loop.create_task(
-                self.ingame.SendChatToDiscord(self.message_channel, string)
-            )
-
-        self.connection.register_packet_listener(
-            print_chat, clientbound.play.ChatMessagePacket
-        )
-
-        self.connection.connect()
-
-        while True:
-            time.sleep(1)
-            pass
-
-    def QuietVerify(self, server):
-        """
-        Used to verify if an account works or not, silently.
-
-        This function is essentially Alts.verify(), however it
-        does it's work 'silently'. In that it simply returns
-        True or False depending on the login status.
-        Is used to test account status before attempting to
-        establish an Alts.connect() call.
-
-        Params:
-         - server (string) : The server to connect to.
-
-        Returns:
-         - bool : True or false depending on login outcome
-
-        Notes:
-        Provided handling is setup within commands, this
-        could easily be used to phase out Alts.verify().
-        """
-
-        match = re.match(
-            r"((?P<host>[^\[\]:]+)|\[(?P<addr>[^\[\]]+)\])" r"(:(?P<port>\d+))?$",
-            server,
-        )
-        if match is None:
-            raise ValueError("Invalid server address: '%s'." % server)
-        self.address = match.group("host") or match.group("addr")
-        self.port = int(match.group("port") or 25565)
-
-        auth_token = authentication.AuthenticationToken()
-        try:
-            auth_token.authenticate(self.username, self.password)
-        except YggdrasilError as e:
-            print(e)
-            return False
-        data = cogs._json.read_json("alts")
-        data[self.username] = self.password
-        cogs._json.write_json(data, "alts")
-        connection = Connection(self.address, self.port, auth_token=auth_token)
-
-        connection.connect()
-        connection.disconnect()
-        return True
-
-    def verify(self, server):
-        """
-        Used to verify if an account works or not.
-
-        This is not a silently execution, depending on
-        the outcome it will print a message to console.
-
-        Params:
-         - server (string) : The server to connect to.
-        """
-
-        match = re.match(
-            r"((?P<host>[^\[\]:]+)|\[(?P<addr>[^\[\]]+)\])" r"(:(?P<port>\d+))?$",
-            server,
-        )
-        if match is None:
-            raise ValueError("Invalid server address: '%s'." % server)
-        self.address = match.group("host") or match.group("addr")
-        self.port = int(match.group("port") or 25565)
-
-        auth_token = authentication.AuthenticationToken()
-        try:
-            auth_token.authenticate(self.username, self.password)
-        except YggdrasilError as e:
-            print(e)
-            return
-        data = cogs._json.read_json("alts")
-        data[self.username] = self.password
-        cogs._json.write_json(data, "alts")
-        connection = Connection(self.address, self.port, auth_token=auth_token)
-
-        connection.connect()
-        connection.disconnect()
-        print(f"Successful login for: {self.username}")
-        return
+from utils.PlayerWrapper import PlayerWrapper
+from utils.utli import GetMessage
 
 
 class Ingame(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
+        self.executor = ThreadPoolExecutor()
+        self.player = None
+        self.isPycraftInstance = False
 
-    async def SendChatToDiscord(self, channel, message):
-        channel = self.bot.get_channel(int(channel))
-        await channel.send(f"```{message}```")
+    async def SendChatToDiscord(self, bot, message, guildId):
+        try:
+            if not self.isPycraftInstance:
+                # This should only be used by PlayerWrapper instances
+                return
+
+            if guildId not in bot.account_dict:
+                return
+
+            data = await bot.config.find(guildId)
+            if not data or "bot channel" not in data:
+                return
+
+            channel = bot.get_channel(data["bot channel"])
+            await channel.send(embed=discord.Embed.from_dict({"description": message}))
+        except:
+            pass
 
     @commands.Cog.listener()
     async def on_ready(self):
-        print("Ingame Cog has been loaded\n-----")
+        print(f"{self.__class__.__name__} cog has been loaded\n-----")
 
     @commands.Cog.listener()
-    async def on_connect(self):
-        print("Attempting Mc connection.")
-        await asyncio.sleep(10)
-        loop = asyncio.get_event_loop()
-        self.bot.account = Alts(self.bot, self.bot.username, self.bot.password)
-        check = functools.partial(self.bot.account.QuietVerify, self.bot.server)
-        loginReturn = await loop.run_in_executor(ThreadPoolExecutor(), check)
-        if loginReturn == True:
-            self.bot.account_dict[self.bot.username] = self.bot.account
+    async def on_message(self, message):
+        if message.author.bot:
+            return
 
-            thing = functools.partial(self.bot.account.connect, self.bot.server)
-            blockReturn = await loop.run_in_executor(ThreadPoolExecutor(), thing)
+        if not message.guild:
+            return
 
-    @commands.command()
-    @commands.is_owner()
-    async def verify(self, ctx, *, args):
-        """
-        Takes a list of accounts in the supplied format and tests if they are
-        'legit' or not. Output is saved in a json file.
+        if message.guild.id not in self.bot.account_dict:
+            return
 
-        Format:
-        [prefix]verify
-        account@gmail.com:Password
-        account2@gmail.com:password
-        """
-        await ctx.message.delete()
-        alts = args.split("\n")
-        print(alts)
-        message = await ctx.send(content="Starting testing on the supplied accounts")
-        for account in alts:
-            username, password = account.split(":")
-            await message.edit(content=f"Testing: {username}")
-            await CheckAlt(self.bot, username, password)
-            await asyncio.sleep(2.5)
-        await message.edit(content="Testing complete")
+        if message.guild.id not in self.bot.database_entries:
+            return
 
-    @commands.command()
-    @commands.is_owner()
-    async def connect(self, ctx, username, password, channel=None):
-        loop = asyncio.get_event_loop()
-        if not channel:
-            account = Alts(self.bot, username, password)
-        else:
-            account = Alts(self.bot, username, password, int(channel))
+        if message.content.startswith(
+            self.bot.database_entries[message.guild.id]["prefix"]
+        ):
+            return
 
-        check = functools.partial(account.QuietVerify, "mc-central.net")
-        loginReturn = await loop.run_in_executor(ThreadPoolExecutor(), check)
-        if loginReturn == True:
-            self.bot.account_dict[username] = account
+        if self.bot.database_entries[message.guild.id]["channel"] is None:
+            return
 
-            thing = functools.partial(account.connect, "mc-central.net")
-            blockReturn = await loop.run_in_executor(ThreadPoolExecutor(), thing)
+        # TODO clean this content so it sends names rather then <@123413412> etc shit
+        # msg = f"{message.author.display_name} -> {message.content}"
+        player = self.bot.account_dict[message.guild.id]
+        player.SendChat(message.content)
 
-    @commands.command()
-    @commands.is_owner()
-    async def accounts(self, ctx):
-        accounts = ""
-        for key in self.bot.account_dict:
-            accounts += f"{key}\n"
-        await ctx.send(f"`{accounts}`")
+        try:
+            await message.delete()
+        except discord.errors.NotFound:
+            pass
 
-    @commands.command()
-    @commands.is_owner()
-    async def control(self, ctx, username, *, message):
-        if not username in self.bot.account_dict:
+    @commands.command(
+        name="connect", description="Connect a minecraft account to the server",
+    )
+    @commands.guild_only()
+    @commands.has_guild_permissions(administrator=True)
+    async def connect(self, ctx):
+        try:
+            await ctx.message.delete()
+        except discord.errors.NotFound:
+            pass
+
+        if ctx.guild.id in self.bot.account_dict:
             await ctx.send(
-                f"`{username}` not in accounts currently logged in, please run the accounts command to see avaliable accounts to control"
+                "A connection should already be established. Kill it with the `disconnect` command if wanted."
             )
             return
-        account = self.bot.account_dict[username]
-        loop = asyncio.get_event_loop()
-        thing = functools.partial(account.send_chat, message)
-        blockReturn = await loop.run_in_executor(ThreadPoolExecutor(), thing)
-        await ctx.send(
-            f"Getting account: `{username}`\nTo send the message: `{message}`"
-        )
 
-    @commands.command()
-    @commands.is_owner()
-    @commands.cooldown(1, 1.5, commands.BucketType.default)
-    async def send(self, ctx, *, message):
-        loop = asyncio.get_event_loop()
-        thing = functools.partial(self.bot.account.send_chat, message)
-        blockReturn = await loop.run_in_executor(ThreadPoolExecutor(), thing)
+        """
+        if len(self.bot.account_dict[ctx.guild.id]) >= self.bot.free_accounts_per_guild:
+            await ctx.send(
+                "You have reached the maximum accounts you can use for this guild!\n||If you wish to upgrade, "
+                "please join our discord and create a ticket. `info` command|| ",
+                delete_after=30,
+            )
+            return
+        """
 
-    @commands.command()
-    @commands.is_owner()
-    @commands.cooldown(1, 1.5, commands.BucketType.default)
-    async def reply(self, ctx, *, message):
-        message = f"/r {message}"
-        loop = asyncio.get_event_loop()
-        thing = functools.partial(self.bot.account.send_chat, message)
-        blockReturn = await loop.run_in_executor(ThreadPoolExecutor(), thing)
+        questions = [
+            ["What is the account email/username?", "Typically an email address."],
+            [
+                "What is the account password?",
+                "This will be deleted and is not stored.",
+            ],
+            [
+                "What server should I connect to?",
+                "If it doesnt use the default port, add the port after the server.\n`myserver.com 12345` as an example",
+            ],
+        ]
+        answers = []
+        for question in questions:
+            placeholder = await GetMessage(self.bot, ctx, question[0], question[1])
+            if placeholder is False:
+                await ctx.send("Cancelling.", delete_after=15)
+                return
 
+            answers.append(placeholder)
 
-async def CheckAlt(bot, username, password):
-    loop = asyncio.get_event_loop()
-    account = Alts(bot, username, password)
-    thing = functools.partial(account.verify, "mc-central.net")
-    blockReturn = await loop.run_in_executor(ThreadPoolExecutor(), thing)
-    return
+        print(ctx.author.name, answers[0])
+
+        if len(answers) != 3:
+            await ctx.send(
+                "Unknown issue, please join our support discord and create a ticket.\n||Discord can be found in the "
+                "`info` command|| ",
+                delete_after=15,
+            )
+            return
+
+        try:
+            player = PlayerWrapper(answers[0], answers[1], self.bot, ctx.guild.id)
+        except YggdrasilError as e:
+            await ctx.send(f"Login failure: `{e}`")
+        else:
+            if " " in answers[2]:
+                ip, port = answers[2].split(" ")
+                player.SetServer(ip, port=int(port))
+            else:
+                player.SetServer(answers[2])
+            print("Server set")
+            futures = []
+            futures.append(self.executor.submit(player.Connect))
+            futures.append(self.executor.submit(player.HandleChat))
+            print("Submitted to executor")
+            self.bot.account_dict[ctx.guild.id] = player
+            print("Set in dict")
+            await ctx.send(
+                f"`{answers[0]}` should have connected to `{answers[2]}`",
+                delete_after=15,
+            )
+
+            noChannel = False
+            if ctx.guild.id in self.bot.database_entries:
+                if self.bot.database_entries[ctx.guild.id]["channel"] is None:
+                    noChannel = True
+
+            if ctx.guild.id not in self.bot.database_entries:
+                noChannel = True
+
+            if noChannel:
+                await ctx.send(
+                    "Please note, as you have not set a bot channel chat cannot be sent from Minecraft to discord "
+                    "or discord to Minecraft. To set this up please run the `sbc <channel>` command, "
+                    "then disconnect and reconnect your account. ",
+                    delete_after=30,
+                )
+
+            # Check for thread errors
+            for _ in range(15):
+                await asyncio.sleep(2.5)
+                for future in concurrent.futures.as_completed(futures):
+                    try:
+                        print(future.result())
+                    except ProxyConnection as e:
+                        print(e)
+                    except Exception as e:
+                        print(e)
+
+    @commands.command(
+        name="disconnect", description="Disconnect your account from the server"
+    )
+    @commands.guild_only()
+    @commands.has_guild_permissions(administrator=True)
+    async def disconnect(self, ctx):
+        await ctx.message.delete()
+        if ctx.guild.id not in self.bot.account_dict:
+            await ctx.send("A connection is not already established.")
+            return
+
+        player = self.bot.account_dict[ctx.guild.id]
+
+        try:
+            player.Disconnect()
+        except OSError:
+            pass
+        self.bot.account_dict.pop(ctx.guild.id)
+        await ctx.send("The account should have disconnected", delete_after=15)
+
+    @commands.command(
+        name="sudo", description="Get your account to say something!", usage="<message>"
+    )
+    @commands.guild_only()
+    @commands.has_guild_permissions(administrator=True)
+    async def sudo(self, ctx, *, message):
+        if ctx.guild.id not in self.bot.account_dict:
+            await ctx.send("A connection is not already established.")
+            return
+
+        player = self.bot.account_dict[ctx.guild.id]
+        player.SendChat(message)
+
+        await ctx.send(f"`{player.auth_token.username}` should have said: `{message}`")
 
 
 def setup(bot):

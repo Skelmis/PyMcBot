@@ -215,30 +215,32 @@ class TestReadWritePackets(unittest.TestCase):
 
     def test_multi_block_change_packet(self):
         Record = clientbound.play.MultiBlockChangePacket.Record
-        packet = clientbound.play.MultiBlockChangePacket(
-            chunk_x=167,
-            chunk_z=15,
-            records=[
+
+        for protocol_version in TEST_VERSIONS:
+            context = ConnectionContext()
+            context.protocol_version = protocol_version
+            packet = clientbound.play.MultiBlockChangePacket(context)
+
+            if protocol_version >= 741:
+                packet.chunk_section_pos = Vector(167, 17, 33)
+                packet.invert_trust_edges = False
+            else:
+                packet.chunk_x, packet.chunk_z = 167, 17
+                self.assertEqual(packet.chunk_pos, (167, 17))
+
+            packet.records = [
                 Record(x=1, y=2, z=3, blockId=56, blockMeta=13),
                 Record(position=Vector(1, 2, 3), block_state_id=909),
                 Record(position=(1, 2, 3), blockStateId=909),
-            ],
-        )
-        self.assertEqual(packet.records[0].blockId, 56)
-        self.assertEqual(packet.records[0].blockMeta, 13)
-        self.assertEqual(packet.records[0].blockStateId, 909)
-        self.assertEqual(packet.records[0].position, Vector(1, 2, 3))
-        self.assertEqual(packet.chunk_pos, (packet.chunk_x, packet.chunk_z))
+            ]
 
-        self.assertEqual(
-            str(packet),
-            "MultiBlockChangePacket(chunk_x=167, chunk_z=15, records=["
-            "Record(x=1, y=2, z=3, block_state_id=909), "
-            "Record(x=1, y=2, z=3, block_state_id=909), "
-            "Record(x=1, y=2, z=3, block_state_id=909)])",
-        )
+            for i in range(3):
+                self.assertEqual(packet.records[i].blockId, 56)
+                self.assertEqual(packet.records[i].blockMeta, 13)
+                self.assertEqual(packet.records[i].blockStateId, 909)
+                self.assertEqual(packet.records[i].position, Vector(1, 2, 3))
 
-        self._test_read_write_packet(packet)
+            self._test_read_write_packet(packet, context)
 
     def test_spawn_object_packet(self):
         for protocol_version in TEST_VERSIONS:

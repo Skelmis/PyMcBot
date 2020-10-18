@@ -1,10 +1,10 @@
-from pyCraft.minecraft.networking.packets import (
+from minecraft.networking.packets import (
     Packet,
     AbstractKeepAlivePacket,
     AbstractPluginMessagePacket,
 )
 
-from pyCraft.minecraft.networking.types import (
+from minecraft.networking.types import (
     Double,
     Float,
     Boolean,
@@ -51,7 +51,9 @@ class KeepAlivePacket(AbstractKeepAlivePacket):
     @staticmethod
     def get_id(context):
         return (
-            0x0F
+            0x10
+            if context.protocol_version >= 712
+            else 0x0F
             if context.protocol_version >= 471
             else 0x10
             if context.protocol_version >= 464
@@ -109,7 +111,9 @@ class PositionAndLookPacket(Packet):
     @staticmethod
     def get_id(context):
         return (
-            0x12
+            0x13
+            if context.protocol_version >= 712
+            else 0x12
             if context.protocol_version >= 471
             else 0x13
             if context.protocol_version >= 464
@@ -168,7 +172,11 @@ class AnimationPacket(Packet):
     @staticmethod
     def get_id(context):
         return (
-            0x2A
+            0x2C
+            if context.protocol_version >= 738
+            else 0x2B
+            if context.protocol_version >= 712
+            else 0x2A
             if context.protocol_version >= 468
             else 0x29
             if context.protocol_version >= 464
@@ -272,7 +280,11 @@ class PlayerBlockPlacementPacket(Packet):
     @staticmethod
     def get_id(context):
         return (
-            0x2C
+            0x2E
+            if context.protocol_version >= 738
+            else 0x2D
+            if context.protocol_version >= 712
+            else 0x2C
             if context.protocol_version >= 468
             else 0x2B
             if context.protocol_version >= 464
@@ -319,7 +331,11 @@ class UseItemPacket(Packet):
     @staticmethod
     def get_id(context):
         return (
-            0x2D
+            0x2F
+            if context.protocol_version >= 738
+            else 0x2E
+            if context.protocol_version >= 712
+            else 0x2D
             if context.protocol_version >= 468
             else 0x2C
             if context.protocol_version >= 464

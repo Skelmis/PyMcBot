@@ -1,5 +1,5 @@
-from pyCraft.minecraft.networking.packets import Packet
-from pyCraft.minecraft.networking.types import (
+from minecraft.networking.packets import Packet
+from minecraft.networking.types import (
     VarInt,
     String,
     Float,
@@ -18,11 +18,13 @@ class SoundEffectPacket(Packet):
     def get_id(context):
         return (
             0x51
+            if context.protocol_version >= 721
+            else 0x52
+            if context.protocol_version >= 550
+            else 0x51
             if context.protocol_version >= 471
             else 0x4D
             if context.protocol_version >= 461
-            else 0x4E
-            if context.protocol_version >= 451
             else 0x4E
             if context.protocol_version >= 451
             else 0x4D

@@ -1,10 +1,11 @@
-from pyCraft.minecraft.networking.packets import Packet
+from minecraft.networking.packets import Packet
 
-from pyCraft.minecraft.networking.types import (
+from minecraft.networking.types import (
     VarInt,
     String,
     VarIntPrefixedByteArray,
     TrailingByteArray,
+    UUID,
 )
 
 
@@ -69,7 +70,12 @@ class LoginSuccessPacket(Packet):
         )
 
     packet_name = "login success"
-    definition = [{"UUID": String}, {"Username": String}]
+    get_definition = staticmethod(
+        lambda context: [
+            {"UUID": UUID if context.protocol_version >= 707 else String},
+            {"Username": String},
+        ]
+    )
 
 
 class SetCompressionPacket(Packet):

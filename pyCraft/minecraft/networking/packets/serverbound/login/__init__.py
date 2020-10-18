@@ -1,6 +1,6 @@
-from pyCraft.minecraft.networking.packets import Packet
+from minecraft.networking.packets import Packet
 
-from pyCraft.minecraft.networking.types import (
+from minecraft.networking.types import (
     VarInt,
     Boolean,
     String,

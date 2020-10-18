@@ -1,5 +1,5 @@
 from .packet import Packet
-from pyCraft.minecraft.networking.types import String, TrailingByteArray
+from minecraft.networking.types import String, TrailingByteArray
 
 
 class AbstractPluginMessagePacket(Packet):

@@ -1,6 +1,6 @@
-from pyCraft.minecraft.networking.packets import Packet
+from minecraft.networking.packets import Packet
 
-from pyCraft.minecraft.networking.types import Long
+from minecraft.networking.types import Long
 
 
 # Formerly known as state_status_serverbound.

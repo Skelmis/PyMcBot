@@ -1,6 +1,6 @@
-from pyCraft.minecraft.networking.packets import Packet
+from minecraft.networking.packets import Packet
 
-from pyCraft.minecraft.networking.types import VarInt, String, UnsignedShort
+from minecraft.networking.types import VarInt, String, UnsignedShort
 
 
 # Formerly known as state_handshake_serverbound.

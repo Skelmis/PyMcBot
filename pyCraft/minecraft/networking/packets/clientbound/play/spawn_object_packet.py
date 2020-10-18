@@ -1,7 +1,7 @@
-from pyCraft.minecraft.networking.packets import Packet
-from pyCraft.minecraft.networking.types.utility import descriptor
+from minecraft.networking.packets import Packet
+from minecraft.networking.types.utility import descriptor
 
-from pyCraft.minecraft.networking.types import (
+from minecraft.networking.types import (
     VarInt,
     UUID,
     Byte,
@@ -72,6 +72,7 @@ class SpawnObjectPacket(Packet):
             return getattr(cls, name)
 
         class EntityType(Enum):
+            # XXX This has not been updated for >= v1.15
             ACTIVATED_TNT = 50 if pv < 458 else 55  # PrimedTnt
             AREA_EFFECT_CLOUD = 3 if pv < 458 else 0
             ARMORSTAND = 78 if pv < 458 else 1

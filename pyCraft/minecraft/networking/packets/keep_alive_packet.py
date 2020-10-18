@@ -1,6 +1,6 @@
 from .packet import Packet
 
-from pyCraft.minecraft.networking.types import VarInt, Long
+from minecraft.networking.types import VarInt, Long
 
 
 class AbstractKeepAlivePacket(Packet):

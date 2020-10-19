@@ -13,7 +13,7 @@
 ## Table of Contents
 
 
-- [Installation](#installation-lol)
+- [Installation](#installation)
 - [Features](#features)
 - [Contributing](#contributing)
 - [Team](#team)
@@ -45,7 +45,7 @@ Thats about a general guide, you will have more questions but feel free to ask t
 
 ---
 
-## Installation lol
+## Installation 
 
 - All the `code` required to get started
 - Download this repo and follow the setup section

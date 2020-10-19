@@ -1,7 +1,11 @@
-from pyCraft.minecraft.networking.packets import Packet
+from minecraft.networking.packets import Packet
 
-from pyCraft.minecraft.networking.types import (
-    VarInt, String, VarIntPrefixedByteArray, TrailingByteArray
+from minecraft.networking.types import (
+    VarInt,
+    String,
+    VarIntPrefixedByteArray,
+    TrailingByteArray,
+    UUID,
 )
 
 
@@ -23,52 +27,70 @@ def get_packets(context):
 class DisconnectPacket(Packet):
     @staticmethod
     def get_id(context):
-        return 0x00 if context.protocol_version >= 391 else \
-               0x01 if context.protocol_version >= 385 else \
-               0x00
+        return (
+            0x00
+            if context.protocol_version >= 391
+            else 0x01
+            if context.protocol_version >= 385
+            else 0x00
+        )
 
     packet_name = "disconnect"
-    definition = [
-        {'json_data': String}]
+    definition = [{"json_data": String}]
 
 
 class EncryptionRequestPacket(Packet):
     @staticmethod
     def get_id(context):
-        return 0x01 if context.protocol_version >= 391 else \
-               0x02 if context.protocol_version >= 385 else \
-               0x01
+        return (
+            0x01
+            if context.protocol_version >= 391
+            else 0x02
+            if context.protocol_version >= 385
+            else 0x01
+        )
 
     packet_name = "encryption request"
     definition = [
-        {'server_id': String},
-        {'public_key': VarIntPrefixedByteArray},
-        {'verify_token': VarIntPrefixedByteArray}]
+        {"server_id": String},
+        {"public_key": VarIntPrefixedByteArray},
+        {"verify_token": VarIntPrefixedByteArray},
+    ]
 
 
 class LoginSuccessPacket(Packet):
     @staticmethod
     def get_id(context):
-        return 0x02 if context.protocol_version >= 391 else \
-               0x03 if context.protocol_version >= 385 else \
-               0x02
+        return (
+            0x02
+            if context.protocol_version >= 391
+            else 0x03
+            if context.protocol_version >= 385
+            else 0x02
+        )
 
     packet_name = "login success"
-    definition = [
-        {'UUID': String},
-        {'Username': String}]
+    get_definition = staticmethod(
+        lambda context: [
+            {"UUID": UUID if context.protocol_version >= 707 else String},
+            {"Username": String},
+        ]
+    )
 
 
 class SetCompressionPacket(Packet):
     @staticmethod
     def get_id(context):
-        return 0x03 if context.protocol_version >= 391 else \
-               0x04 if context.protocol_version >= 385 else \
-               0x03
+        return (
+            0x03
+            if context.protocol_version >= 391
+            else 0x04
+            if context.protocol_version >= 385
+            else 0x03
+        )
 
     packet_name = "set compression"
-    definition = [
-        {'threshold': VarInt}]
+    definition = [{"threshold": VarInt}]
 
 
 class PluginRequestPacket(Packet):
@@ -88,11 +110,11 @@ class PluginRequestPacket(Packet):
 
     @staticmethod
     def get_id(context):
-        return 0x04 if context.protocol_version >= 391 else \
-               0x00
+        return 0x04 if context.protocol_version >= 391 else 0x00
 
-    packet_name = 'login plugin request'
+    packet_name = "login plugin request"
     definition = [
-        {'message_id': VarInt},
-        {'channel': String},
-        {'data': TrailingByteArray}]
+        {"message_id": VarInt},
+        {"channel": String},
+        {"data": TrailingByteArray},
+    ]

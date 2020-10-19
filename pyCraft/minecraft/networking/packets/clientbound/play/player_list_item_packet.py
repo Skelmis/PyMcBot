@@ -1,44 +1,64 @@
-from pyCraft.minecraft.networking.packets import Packet
+from minecraft.networking.packets import Packet
 
-from pyCraft.minecraft.networking.types import (
-    String, Boolean, UUID, VarInt, MutableRecord,
+from minecraft.networking.types import (
+    String,
+    Boolean,
+    UUID,
+    VarInt,
+    MutableRecord,
 )
 
 
+# Player Info
 class PlayerListItemPacket(Packet):
     @staticmethod
     def get_id(context):
-        return 0x33 if context.protocol_version >= 471 else \
-               0x31 if context.protocol_version >= 451 else \
-               0x30 if context.protocol_version >= 389 else \
-               0x2F if context.protocol_version >= 345 else \
-               0x2E if context.protocol_version >= 336 else \
-               0x2D if context.protocol_version >= 332 else \
-               0x2E if context.protocol_version >= 318 else \
-               0x2D if context.protocol_version >= 107 else \
-               0x38
+        return (
+            0x32
+            if context.protocol_version >= 741
+            else 0x33
+            if context.protocol_version >= 721
+            else 0x34
+            if context.protocol_version >= 550
+            else 0x33
+            if context.protocol_version >= 471
+            else 0x31
+            if context.protocol_version >= 451
+            else 0x30
+            if context.protocol_version >= 389
+            else 0x2F
+            if context.protocol_version >= 345
+            else 0x2E
+            if context.protocol_version >= 336
+            else 0x2D
+            if context.protocol_version >= 332
+            else 0x2E
+            if context.protocol_version >= 318
+            else 0x2D
+            if context.protocol_version >= 107
+            else 0x38
+        )
 
     packet_name = "player list item"
 
-    fields = 'action_type', 'actions'
+    fields = "action_type", "actions"
 
     def field_string(self, field):
-        if field == 'action_type':
+        if field == "action_type":
             return self.action_type.__name__
         return super(PlayerListItemPacket, self).field_string(field)
 
     class PlayerList(object):
-        __slots__ = 'players_by_uuid'
+        __slots__ = "players_by_uuid"
 
         def __init__(self, *items):
             self.players_by_uuid = {item.uuid: item for item in items}
 
     class PlayerListItem(MutableRecord):
-        __slots__ = (
-            'uuid', 'name', 'properties', 'gamemode', 'ping', 'display_name')
+        __slots__ = ("uuid", "name", "properties", "gamemode", "ping", "display_name")
 
     class PlayerProperty(MutableRecord):
-        __slots__ = 'name', 'value', 'signature'
+        __slots__ = "name", "value", "signature"
 
         def read(self, file_object):
             self.name = String.read(file_object)
@@ -59,7 +79,7 @@ class PlayerListItemPacket(Packet):
                 Boolean.send(False, packet_buffer)
 
     class Action(MutableRecord):
-        __slots__ = 'uuid',
+        __slots__ = ("uuid",)
 
         def read(self, file_object):
             self.uuid = UUID.read(file_object)
@@ -71,11 +91,13 @@ class PlayerListItemPacket(Packet):
 
         def _read(self, file_object):
             raise NotImplementedError(
-                'This abstract method must be overridden in a subclass.')
+                "This abstract method must be overridden in a subclass."
+            )
 
         def _send(self, packet_buffer):
             raise NotImplementedError(
-                'This abstract method must be overridden in a subclass.')
+                "This abstract method must be overridden in a subclass."
+            )
 
         @classmethod
         def type_from_id(cls, action_id):
@@ -85,7 +107,7 @@ class PlayerListItemPacket(Packet):
             raise ValueError("Unknown player list action ID: %s." % action_id)
 
     class AddPlayerAction(Action):
-        __slots__ = 'name', 'properties', 'gamemode', 'ping', 'display_name'
+        __slots__ = "name", "properties", "gamemode", "ping", "display_name"
         action_id = 0
 
         def _read(self, file_object):
@@ -124,11 +146,12 @@ class PlayerListItemPacket(Packet):
                 properties=self.properties,
                 gamemode=self.gamemode,
                 ping=self.ping,
-                display_name=self.display_name)
+                display_name=self.display_name,
+            )
             player_list.players_by_uuid[self.uuid] = player
 
     class UpdateGameModeAction(Action):
-        __slots__ = 'gamemode'
+        __slots__ = "gamemode"
         action_id = 1
 
         def _read(self, file_object):
@@ -143,7 +166,7 @@ class PlayerListItemPacket(Packet):
                 player.gamemode = self.gamemode
 
     class UpdateLatencyAction(Action):
-        __slots__ = 'ping'
+        __slots__ = "ping"
         action_id = 2
 
         def _read(self, file_object):
@@ -158,7 +181,7 @@ class PlayerListItemPacket(Packet):
                 player.ping = self.ping
 
     class UpdateDisplayNameAction(Action):
-        __slots__ = 'display_name'
+        __slots__ = "display_name"
         action_id = 3
 
         def _read(self, file_object):

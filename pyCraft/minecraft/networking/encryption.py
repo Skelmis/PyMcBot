@@ -11,8 +11,11 @@ def generate_shared_secret():
 
 
 def create_AES_cipher(shared_secret):
-    cipher = Cipher(algorithms.AES(shared_secret), modes.CFB8(shared_secret),
-                    backend=default_backend())
+    cipher = Cipher(
+        algorithms.AES(shared_secret),
+        modes.CFB8(shared_secret),
+        backend=default_backend(),
+    )
     return cipher
 
 
@@ -35,7 +38,7 @@ def encrypt_token_and_secret(pubkey, verification_token, shared_secret):
 def generate_verification_hash(server_id, shared_secret, public_key):
     verification_hash = sha1()
 
-    verification_hash.update(server_id.encode('utf-8'))
+    verification_hash.update(server_id.encode("utf-8"))
     verification_hash.update(shared_secret)
     verification_hash.update(public_key)
 
@@ -46,17 +49,17 @@ def minecraft_sha1_hash_digest(sha1_hash):
     # Minecraft first parses the sha1 bytes as a signed number and then
     # spits outs its hex representation
     number_representation = _number_from_bytes(sha1_hash.digest(), signed=True)
-    return format(number_representation, 'x')
+    return format(number_representation, "x")
 
 
 def _number_from_bytes(b, signed=False):
     try:
-        return int.from_bytes(b, byteorder='big', signed=signed)
+        return int.from_bytes(b, byteorder="big", signed=signed)
     except AttributeError:  # pragma: no cover
         # py-2 compatibility
         if len(b) == 0:
-            b = b'\x00'
-        num = int(str(b).encode('hex'), 16)
+            b = b"\x00"
+        num = int(str(b).encode("hex"), 16)
         if signed and (ord(b[0]) & 0x80):
             num -= 2 ** (len(b) * 8)
         return num

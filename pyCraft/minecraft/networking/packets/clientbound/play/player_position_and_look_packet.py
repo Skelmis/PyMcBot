@@ -1,50 +1,78 @@
-from pyCraft.minecraft.networking.packets import Packet
+from minecraft.networking.packets import Packet
 
-from pyCraft.minecraft.networking.types import (
-    Double, Float, Byte, VarInt, BitFieldEnum, Vector, Direction,
-    PositionAndLook, multi_attribute_alias,
+from minecraft.networking.types import (
+    Double,
+    Float,
+    Byte,
+    VarInt,
+    BitFieldEnum,
+    Vector,
+    Direction,
+    PositionAndLook,
+    multi_attribute_alias,
 )
 
 
 class PlayerPositionAndLookPacket(Packet, BitFieldEnum):
     @staticmethod
     def get_id(context):
-        return 0x35 if context.protocol_version >= 471 else \
-               0x33 if context.protocol_version >= 451 else \
-               0x32 if context.protocol_version >= 389 else \
-               0x31 if context.protocol_version >= 352 else \
-               0x30 if context.protocol_version >= 345 else \
-               0x2F if context.protocol_version >= 336 else \
-               0x2E if context.protocol_version >= 332 else \
-               0x2F if context.protocol_version >= 318 else \
-               0x2E if context.protocol_version >= 70 else \
-               0x08
+        return (
+            0x34
+            if context.protocol_version >= 741
+            else 0x35
+            if context.protocol_version >= 721
+            else 0x36
+            if context.protocol_version >= 550
+            else 0x35
+            if context.protocol_version >= 471
+            else 0x33
+            if context.protocol_version >= 451
+            else 0x32
+            if context.protocol_version >= 389
+            else 0x31
+            if context.protocol_version >= 352
+            else 0x30
+            if context.protocol_version >= 345
+            else 0x2F
+            if context.protocol_version >= 336
+            else 0x2E
+            if context.protocol_version >= 332
+            else 0x2F
+            if context.protocol_version >= 318
+            else 0x2E
+            if context.protocol_version >= 70
+            else 0x08
+        )
 
     packet_name = "player position and look"
-    get_definition = staticmethod(lambda context: [
-        {'x': Double},
-        {'y': Double},
-        {'z': Double},
-        {'yaw': Float},
-        {'pitch': Float},
-        {'flags': Byte},
-        {'teleport_id': VarInt} if context.protocol_version >= 107 else {},
-    ])
+    get_definition = staticmethod(
+        lambda context: [
+            {"x": Double},
+            {"y": Double},
+            {"z": Double},
+            {"yaw": Float},
+            {"pitch": Float},
+            {"flags": Byte},
+            {"teleport_id": VarInt} if context.protocol_version >= 107 else {},
+        ]
+    )
 
     # Access the 'x', 'y', 'z' fields as a Vector tuple.
-    position = multi_attribute_alias(Vector, 'x', 'y', 'z')
+    position = multi_attribute_alias(Vector, "x", "y", "z")
 
     # Access the 'yaw', 'pitch' fields as a Direction tuple.
-    look = multi_attribute_alias(Direction, 'yaw', 'pitch')
+    look = multi_attribute_alias(Direction, "yaw", "pitch")
 
     # Access the 'x', 'y', 'z', 'yaw', 'pitch' fields as a PositionAndLook.
     # NOTE: modifying the object retrieved from this property will not change
     # the packet; it can only be changed by attribute or property assignment.
     position_and_look = multi_attribute_alias(
-        PositionAndLook, 'x', 'y', 'z', 'yaw', 'pitch')
+        PositionAndLook, "x", "y", "z", "yaw", "pitch"
+    )
 
     field_enum = classmethod(
-        lambda cls, field, context: cls if field == 'flags' else None)
+        lambda cls, field, context: cls if field == "flags" else None
+    )
 
     FLAG_REL_X = 0x01
     FLAG_REL_Y = 0x02

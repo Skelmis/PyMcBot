@@ -2,3 +2,8 @@
 cogs/__pycache__
 accounts.txt
 pyCraft/__pycache__
+.idea/
+*.json
+bot_config/
+pyCraft/docs/_static/
+pyCraft/docs/_templates/

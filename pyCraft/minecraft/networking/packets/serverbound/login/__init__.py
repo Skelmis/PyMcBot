@@ -1,46 +1,53 @@
-from pyCraft.minecraft.networking.packets import Packet
+from minecraft.networking.packets import Packet
 
-from pyCraft.minecraft.networking.types import (
-    VarInt, Boolean, String, VarIntPrefixedByteArray, TrailingByteArray
+from minecraft.networking.types import (
+    VarInt,
+    Boolean,
+    String,
+    VarIntPrefixedByteArray,
+    TrailingByteArray,
 )
 
 
 # Formerly known as state_login_serverbound.
 def get_packets(context):
-    packets = {
-        LoginStartPacket,
-        EncryptionResponsePacket
-    }
+    packets = {LoginStartPacket, EncryptionResponsePacket}
     if context.protocol_version >= 385:
-        packets |= {
-            PluginResponsePacket
-        }
+        packets |= {PluginResponsePacket}
     return packets
 
 
 class LoginStartPacket(Packet):
     @staticmethod
     def get_id(context):
-        return 0x00 if context.protocol_version >= 391 else \
-               0x01 if context.protocol_version >= 385 else \
-               0x00
+        return (
+            0x00
+            if context.protocol_version >= 391
+            else 0x01
+            if context.protocol_version >= 385
+            else 0x00
+        )
 
     packet_name = "login start"
-    definition = [
-        {'name': String}]
+    definition = [{"name": String}]
 
 
 class EncryptionResponsePacket(Packet):
     @staticmethod
     def get_id(context):
-        return 0x01 if context.protocol_version >= 391 else \
-               0x02 if context.protocol_version >= 385 else \
-               0x01
+        return (
+            0x01
+            if context.protocol_version >= 391
+            else 0x02
+            if context.protocol_version >= 385
+            else 0x01
+        )
 
     packet_name = "encryption response"
     definition = [
-        {'shared_secret': VarIntPrefixedByteArray},
-        {'verify_token': VarIntPrefixedByteArray}]
+        {"shared_secret": VarIntPrefixedByteArray},
+        {"verify_token": VarIntPrefixedByteArray},
+    ]
 
 
 class PluginResponsePacket(Packet):
@@ -50,14 +57,13 @@ class PluginResponsePacket(Packet):
 
     @staticmethod
     def get_id(context):
-        return 0x02 if context.protocol_version >= 391 else \
-               0x00
+        return 0x02 if context.protocol_version >= 391 else 0x00
 
-    packet_name = 'login plugin response'
+    packet_name = "login plugin response"
     fields = (
-        'message_id',  # str
-        'successful',  # bool
-        'data',        # bytes, or None if 'successful' is False
+        "message_id",  # str
+        "successful",  # bool
+        "data",  # bytes, or None if 'successful' is False
     )
 
     def read(self, file_object):
@@ -70,8 +76,8 @@ class PluginResponsePacket(Packet):
 
     def write_fields(self, packet_buffer):
         VarInt.send(self.message_id, packet_buffer)
-        successful = getattr(self, 'data', None) is not None
-        successful = getattr(self, 'successful', successful)
+        successful = getattr(self, "data", None) is not None
+        successful = getattr(self, "successful", successful)
         Boolean.send(successful, packet_buffer)
         if successful:
             TrailingByteArray.send(self.data, packet_buffer)

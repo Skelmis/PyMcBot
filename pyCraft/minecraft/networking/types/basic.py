@@ -2,110 +2,139 @@
 Each type has a method which is used to read and write it.
 These definitions and methods are used by the packet definitions
 """
-from __future__ import division
 import struct
 import uuid
+import io
 
-from .utility import Vector
+import pynbt
+
+from .utility import Vector, class_and_instancemethod
 
 
 __all__ = (
-    'Type', 'Boolean', 'UnsignedByte', 'Byte', 'Short', 'UnsignedShort',
-    'Integer', 'FixedPointInteger', 'Angle', 'VarInt', 'Long',
-    'UnsignedLong', 'Float', 'Double', 'ShortPrefixedByteArray',
-    'VarIntPrefixedByteArray', 'TrailingByteArray', 'String', 'UUID',
-    'Position',
+    "Type",
+    "Boolean",
+    "UnsignedByte",
+    "Byte",
+    "Short",
+    "UnsignedShort",
+    "Integer",
+    "FixedPointInteger",
+    "Angle",
+    "VarInt",
+    "VarLong",
+    "Long",
+    "UnsignedLong",
+    "Float",
+    "Double",
+    "ShortPrefixedByteArray",
+    "VarIntPrefixedByteArray",
+    "TrailingByteArray",
+    "String",
+    "UUID",
+    "Position",
+    "NBT",
+    "PrefixedArray",
 )
 
 
 class Type(object):
+    # pylint: disable=no-self-argument
     __slots__ = ()
 
-    @classmethod
-    def read_with_context(cls, file_object, _context):
-        return cls.read(file_object)
+    @class_and_instancemethod
+    def read_with_context(cls_or_self, file_object, _context):
+        return cls_or_self.read(file_object)
 
-    @classmethod
-    def send_with_context(cls, value, socket, _context):
-        return cls.send(value, socket)
+    @class_and_instancemethod
+    def send_with_context(cls_or_self, value, socket, _context):
+        return cls_or_self.send(value, socket)
 
     @classmethod
     def read(cls, file_object):
         if cls.read_with_context == Type.read_with_context:
-            raise NotImplementedError('One of "read" or "read_with_context" '
-                                      'must be overridden in a subclass.')
+            raise NotImplementedError(
+                'One of "read" or "read_with_context" '
+                "must be overridden in a subclass."
+            )
         else:
-            raise TypeError('This type requires a ConnectionContext: '
-                            'call "read_with_context" instead of "read".')
+            raise TypeError(
+                "This type requires a ConnectionContext: "
+                'call "read_with_context" instead of "read".'
+            )
 
     @classmethod
     def send(cls, value, socket):
         if cls.send_with_context == Type.send_with_context:
-            raise NotImplementedError('One of "send" or "send_with_context" '
-                                      'must be overridden in a subclass.')
+            raise NotImplementedError(
+                'One of "send" or "send_with_context" '
+                "must be overridden in a subclass."
+            )
         else:
-            raise TypeError('This type requires a ConnectionContext: '
-                            'call "send_with_context" instead of "send".')
+            raise TypeError(
+                "This type requires a ConnectionContext: "
+                'call "send_with_context" instead of "send".'
+            )
 
 
 class Boolean(Type):
     @staticmethod
     def read(file_object):
-        return struct.unpack('?', file_object.read(1))[0]
+        return struct.unpack("?", file_object.read(1))[0]
 
     @staticmethod
     def send(value, socket):
-        socket.send(struct.pack('?', value))
+        socket.send(struct.pack("?", value))
 
 
 class UnsignedByte(Type):
     @staticmethod
     def read(file_object):
-        return struct.unpack('>B', file_object.read(1))[0]
+        return struct.unpack(">B", file_object.read(1))[0]
 
     @staticmethod
     def send(value, socket):
-        socket.send(struct.pack('>B', value))
+        socket.send(struct.pack(">B", value))
 
 
 class Byte(Type):
     @staticmethod
     def read(file_object):
-        return struct.unpack('>b', file_object.read(1))[0]
+        return struct.unpack(">b", file_object.read(1))[0]
 
     @staticmethod
     def send(value, socket):
-        socket.send(struct.pack('>b', value))
+        socket.send(struct.pack(">b", value))
 
 
 class Short(Type):
     @staticmethod
     def read(file_object):
-        return struct.unpack('>h', file_object.read(2))[0]
+        return struct.unpack(">h", file_object.read(2))[0]
 
     @staticmethod
     def send(value, socket):
-        socket.send(struct.pack('>h', value))
+        socket.send(struct.pack(">h", value))
 
 
 class UnsignedShort(Type):
     @staticmethod
     def read(file_object):
-        return struct.unpack('>H', file_object.read(2))[0]
+        return struct.unpack(">H", file_object.read(2))[0]
 
     @staticmethod
     def send(value, socket):
-        socket.send(struct.pack('>H', value))
+        socket.send(struct.pack(">H", value))
 
 
 class Integer(Type):
     @staticmethod
     def read(file_object):
-        return struct.unpack('>i', file_object.read(4))[0]
+        return struct.unpack(">i", file_object.read(4))[0]
 
     @staticmethod
     def send(value, socket):
-        socket.send(struct.pack('>i', value))
+        socket.send(struct.pack(">i", value))
 
 
 class FixedPointInteger(Type):
@@ -131,12 +160,13 @@ class Angle(Type):
 
 
 class VarInt(Type):
-    @staticmethod
-    def read(file_object):
+    max_bytes = 5
+
+    @classmethod
+    def read(cls, file_object):
         number = 0
-        # Limit of 5 bytes, otherwise its possible to cause
-        # a DOS attack by sending VarInts that just keep
-        # going
+        # Limit of 'cls.max_bytes' bytes, otherwise its possible to cause
+        # a DOS attack by sending VarInts that just keep going
         bytes_encountered = 0
         while True:
             byte = file_object.read(1)
@@ -149,7 +179,7 @@ class VarInt(Type):
                 break
 
             bytes_encountered += 1
-            if bytes_encountered > 5:
+            if bytes_encountered > cls.max_bytes:
                 raise ValueError("Tried to read too long of a VarInt")
         return number
 
@@ -172,6 +202,10 @@ class VarInt(Type):
         raise ValueError("Integer too large")
 
 
+class VarLong(VarInt):
+    max_bytes = 10
+
+
 # Maps (maximum integer value -> size of VarInt in bytes)
 VARINT_SIZE_TABLE = {
     2 ** 7: 1,
@@ -185,48 +219,48 @@ VARINT_SIZE_TABLE = {
     2 ** 63: 9,
     2 ** 70: 10,
     2 ** 77: 11,
-    2 ** 84: 12
+    2 ** 84: 12,
 }
 
 
 class Long(Type):
     @staticmethod
     def read(file_object):
-        return struct.unpack('>q', file_object.read(8))[0]
+        return struct.unpack(">q", file_object.read(8))[0]
 
     @staticmethod
     def send(value, socket):
-        socket.send(struct.pack('>q', value))
+        socket.send(struct.pack(">q", value))
 
 
 class UnsignedLong(Type):
     @staticmethod
     def read(file_object):
-        return struct.unpack('>Q', file_object.read(8))[0]
+        return struct.unpack(">Q", file_object.read(8))[0]
 
     @staticmethod
     def send(value, socket):
-        socket.send(struct.pack('>Q', value))
+        socket.send(struct.pack(">Q", value))
 
 
 class Float(Type):
     @staticmethod
     def read(file_object):
-        return struct.unpack('>f', file_object.read(4))[0]
+        return struct.unpack(">f", file_object.read(4))[0]
 
     @staticmethod
     def send(value, socket):
-        socket.send(struct.pack('>f', value))
+        socket.send(struct.pack(">f", value))
 
 
 class Double(Type):
     @staticmethod
     def read(file_object):
-        return struct.unpack('>d', file_object.read(8))[0]
+        return struct.unpack(">d", file_object.read(8))[0]
 
     @staticmethod
     def send(value, socket):
-        socket.send(struct.pack('>d', value))
+        socket.send(struct.pack(">d", value))
 
 
 class ShortPrefixedByteArray(Type):
@@ -274,7 +308,7 @@ class String(Type):
 
     @staticmethod
     def send(value, socket):
-        value = value.encode('utf-8')
+        value = value.encode("utf-8")
         VarInt.send(len(value), socket)
         socket.send(value)
 
@@ -291,19 +325,20 @@ class UUID(Type):
 
 class Position(Type, Vector):
     """3D position vectors with a specific, compact network representation."""
+
     __slots__ = ()
 
     @staticmethod
     def read_with_context(file_object, context):
         location = UnsignedLong.read(file_object)
-        x = int(location >> 38)                # 26 most significant bits
+        x = int(location >> 38)  # 26 most significant bits
 
         if context.protocol_version >= 443:
             z = int((location >> 12) & 0x3FFFFFF)  # 26 intermediate bits
-            y = int(location & 0xFFF)              # 12 least signficant bits
+            y = int(location & 0xFFF)  # 12 least signficant bits
         else:
-            y = int((location >> 26) & 0xFFF)      # 12 intermediate bits
-            z = int(location & 0x3FFFFFF)          # 26 least significant bits
+            y = int((location >> 26) & 0xFFF)  # 12 intermediate bits
+            z = int(location & 0x3FFFFFF)  # 26 least significant bits
 
         if x >= pow(2, 25):
             x -= pow(2, 26)
@@ -320,7 +355,56 @@ class Position(Type, Vector):
     def send_with_context(position, socket, context):
         # 'position' can be either a tuple or Position object.
         x, y, z = position
-        value = ((x & 0x3FFFFFF) << 38 | (z & 0x3FFFFFF) << 12 | (y & 0xFFF)
-                 if context.protocol_version >= 443 else
-                 (x & 0x3FFFFFF) << 38 | (y & 0xFFF) << 26 | (z & 0x3FFFFFF))
+        value = (
+            (x & 0x3FFFFFF) << 38 | (z & 0x3FFFFFF) << 12 | (y & 0xFFF)
+            if context.protocol_version >= 443
+            else (x & 0x3FFFFFF) << 38 | (y & 0xFFF) << 26 | (z & 0x3FFFFFF)
+        )
         UnsignedLong.send(value, socket)
+
+
+class NBT(Type):
+    @staticmethod
+    def read(file_object):
+        return pynbt.NBTFile(io=file_object)
+
+    @staticmethod
+    def send(value, socket):
+        buffer = io.BytesIO()
+        pynbt.NBTFile(value=value).save(buffer)
+        socket.send(buffer.getvalue())
+
+
+class PrefixedArray(Type):
+    __slots__ = "length_type", "element_type"
+
+    def __init__(self, length_type, element_type):
+        self.length_type = length_type
+        self.element_type = element_type
+
+    def read(self, file_object):
+        return self.__read(file_object, self.element_type.read)
+
+    def send(self, value, socket):
+        return self.__send(value, socket, self.element_type.send)
+
+    def read_with_context(self, file_object, context):
+        def element_read(file_object):
+            return self.element_type.read_with_context(file_object, context)
+
+        return self.__read(file_object, element_read)
+
+    def send_with_context(self, value, socket, context):
+        def element_send(value, socket):
+            return self.element_type.send_with_context(value, socket, context)
+
+        return self.__send(value, socket, element_send)
+
+    def __read(self, file_object, element_read):
+        length = self.length_type.read(file_object)
+        return [element_read(file_object) for i in range(length)]
+
+    def __send(self, value, socket, element_send):
+        self.length_type.send(len(value), socket)
+        for element in value:
+            element_send(element, socket)

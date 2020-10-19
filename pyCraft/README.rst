@@ -16,7 +16,7 @@ communication with a MineCraft server.
 Detailed information for developers can be found here:
 `<http://pycraft.readthedocs.org/en/latest/>`_.
 
-``start.py`` is a basic example of a headless client using the library
+``start.py`` is a basic example of a headless client using the library that can be found under the `examples` folder.
 Use ``start.py --help`` for the options.
 
 Supported Minecraft versions
@@ -30,6 +30,8 @@ pyCraft is compatible with the following Minecraft releases:
 * 1.12, 1.12.1, 1.12.2
 * 1.13, 1.13.1, 1.13.2
 * 1.14, 1.14.1, 1.14.2, 1.14.3, 1.14.4
+* 1.15, 1.15.1, 1.15.2
+* 1.16, 1.16.1, 1.16.2
 
 In addition, some development snapshots and pre-release versions are supported:
 `<minecraft/__init__.py>`_ contains a full list of supported Minecraft versions
@@ -49,19 +51,19 @@ Supported Python versions
 -------------------------
 pyCraft is compatible with (at least) the following Python implementations:
 
-* Python 2.7
-* Python 3.4
 * Python 3.5
 * Python 3.6
+* Python 3.7
+* Python 3.8
 * PyPy
 
 Requirements
 ------------
 - `cryptography <https://github.com/pyca/cryptography#cryptography>`_
 - `requests <http://docs.python-requests.org/en/latest/>`_
-- `future <http://python-future.org/>`_
+- `PyNBT <https://github.com/TkTech/PyNBT>`_
 
-The requirements are also stored in ``requirements.txt``
+The requirements are also stored in ``setup.py``
 
 See the installation instructions for the cryptography library here: `<https://cryptography.io/en/latest/installation/>`_
 but essentially ``pip install -r requirements.txt`` should cover everything.

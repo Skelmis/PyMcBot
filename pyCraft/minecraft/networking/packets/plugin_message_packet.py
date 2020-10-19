@@ -1,5 +1,5 @@
 from .packet import Packet
-from pyCraft.minecraft.networking.types import String, TrailingByteArray
+from minecraft.networking.types import String, TrailingByteArray
 
 
 class AbstractPluginMessagePacket(Packet):
@@ -7,6 +7,5 @@ class AbstractPluginMessagePacket(Packet):
        names of channels, between Minecraft 1.12 and 1.13 - see <http://wiki.vg
        /index.php?title=Pre-release_protocol&oldid=14132#Plugin_Channels>.
     """
-    definition = [
-        {'channel': String},
-        {'data': TrailingByteArray}]
+
+    definition = [{"channel": String}, {"data": TrailingByteArray}]

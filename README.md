@@ -13,7 +13,7 @@
 ## Table of Contents
 
 
-- [Installation](#installation-lol)
+- [Installation](#installation)
 - [Features](#features)
 - [Contributing](#contributing)
 - [Team](#team)
@@ -24,28 +24,7 @@
 
 ---
 
-## Example 
-
-```
-You will need to clone this repo, it is how you work with minecraft in python. Short of doing everything yourself I dont see a way of doing it easier
-https://github.com/ammaraskar/pyCraft
-
-And I said 'easier' not easy, Pycraft is remarkably hard to grasp for what it is. Out of the box Pycraft only supports the minimum required packets to establish and maintain a connection to a server. If you want more, you have to code them yourself. On there github, they do have a headless client under `start.py`, its not built for usage with Discord.Py but serves as a way to understand how Pycraft works.
-
-A note, PyCraft **IS** blocking. To use it in a bot you need to run it separately, I recommend using `asyncio's` `run_in_executor` method on a ThreadPoolExecutor(), see my code for examples. You could do it a different way if you really wanted.
-
-I recommend making you own account class which can be used to create, establish and maintain new connections. You could modify the headless client they provide as can be seen in a somewhat outdated fashion on the other branch of my repo. But making your own class is simpler and easier to bug fix etc etc
-
-bUt I wanna send a message to discord? Well, meet the `asyncio event loop`, its where our async function bois chill waiting to be run. Check the following links for that
-<https://github.com/Skelmis/PyMcBot/blob/master/cogs/ingame.py#L219>
-<https://github.com/Skelmis/PyMcBot/blob/master/cogs/ingame.py#L123>
-
-Thats about a general guide, you will have more questions but feel free to ask them
-```
-
----
-
-## Installation lol
+## Installation 
 
 - All the `code` required to get started
 - Download this repo and follow the setup section

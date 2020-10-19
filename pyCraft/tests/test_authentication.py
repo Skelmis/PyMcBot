@@ -4,17 +4,17 @@ from minecraft.authentication import _make_request
 from minecraft.authentication import _raise_from_response
 from minecraft.exceptions import YggdrasilError
 
+from unittest import mock
+import unittest
 import requests
 import json
-import unittest
 import os
-from .compat import mock
 
 FAKE_DATA = {
     "id_": "85e2c12b9eab4a7dabf61babc11354c2",
     "access_token": "9c771b61cef241808e129e33d51ea745",
     "client_token": "74076db55d8b4087a607fdeace60a94a",
-    "username": "TheBadassMCrafter"
+    "username": "TheBadassMCrafter",
 }
 
 CREDENTIALS_LOCATION = "credentials"
@@ -48,13 +48,14 @@ username, password = get_mc_credentials()
 
 
 skipIfNoCredentials = unittest.skipIf(
-    username is None or password is None,
-    "Need credentials to perform test.")
+    username is None or password is None, "Need credentials to perform test."
+)
 
 
 skipUnlessInternetTestsEnabled = unittest.skipUnless(
-    os.environ.get('PYCRAFT_RUN_INTERNET_TESTS'),
-    "Tests involving Internet access are disabled.")
+    os.environ.get("PYCRAFT_RUN_INTERNET_TESTS"),
+    "Tests involving Internet access are disabled.",
+)
 
 
 class InitProfile(unittest.TestCase):
@@ -150,9 +151,9 @@ class InitAuthenticationToken(unittest.TestCase):
         self.assertEqual(a.client_token, FAKE_DATA["client_token"])
 
     def test_init_positional(self):
-        a = AuthenticationToken(FAKE_DATA["username"],
-                                FAKE_DATA["access_token"],
-                                FAKE_DATA["client_token"])
+        a = AuthenticationToken(
+            FAKE_DATA["username"], FAKE_DATA["access_token"], FAKE_DATA["client_token"]
+        )
 
         self.assertEqual(a.username, FAKE_DATA["username"])
         self.assertEqual(a.access_token, FAKE_DATA["access_token"])
@@ -184,8 +185,10 @@ class AuthenticateAuthenticationToken(unittest.TestCase):
         with self.assertRaises(YggdrasilError) as cm:
             a.authenticate("Billy", "The Goat")
 
-        err = "[403] ForbiddenOperationException: " \
-              "'Invalid credentials. Invalid username or password.'"
+        err = (
+            "[403] ForbiddenOperationException: "
+            "'Invalid credentials. Invalid username or password.'"
+        )
         self.maxDiff = 5000
         self.assertEqual(str(cm.exception), err)
 
@@ -205,13 +208,12 @@ class MakeRequest(unittest.TestCase):
         self.assertEqual(res.request.method, "POST")
 
     def test_make_request_json_dump(self):
-        data = {"Marie": "McGee",
-                "George": 1,
-                "Nestly": {
-                    "Nestling": "Nestling's tail"
-                    },
-                "Listly": ["listling1", 2, "listling 3"]
-                }
+        data = {
+            "Marie": "McGee",
+            "George": 1,
+            "Nestly": {"Nestling": "Nestling's tail"},
+            "Listly": ["listling1", 2, "listling 3"],
+        }
 
         res = _make_request(AUTHSERVER, "authenticate", data)
         self.assertEqual(res.request.body, json.dumps(data))
@@ -227,8 +229,8 @@ class RaiseFromRequest(unittest.TestCase):
         err_res = mock.NonCallableMock(requests.Response)
         err_res.status_code = 401
         err_res.json = mock.MagicMock(
-            return_value={"error": "ThisIsAnException",
-                          "errorMessage": "Went wrong."})
+            return_value={"error": "ThisIsAnException", "errorMessage": "Went wrong."}
+        )
         err_res.text = json.dumps(err_res.json())
 
         with self.assertRaises(YggdrasilError) as cm:
@@ -279,22 +281,18 @@ class NormalConnectionProcedure(unittest.TestCase):
         successful_res = mock.NonCallableMock(requests.Response)
         successful_res.status_code = 200
         successful_res.json = mock.MagicMock(
-            return_value={"accessToken": "token",
-                          "clientToken": "token",
-                          "selectedProfile": {
-                              "id": "1",
-                              "name": "asdf"
-                          }}
+            return_value={
+                "accessToken": "token",
+                "clientToken": "token",
+                "selectedProfile": {"id": "1", "name": "asdf"},
+            }
         )
         successful_res.text = json.dumps(successful_res.json())
 
         error_res = mock.NonCallableMock(requests.Response)
         error_res.status_code = 400
         error_res.json = mock.MagicMock(
-            return_value={
-                "error": "invalid request",
-                "errorMessage": "invalid request"
-            }
+            return_value={"error": "invalid request", "errorMessage": "invalid request"}
         )
         error_res.text = json.dumps(error_res.json())
 
@@ -307,8 +305,9 @@ class NormalConnectionProcedure(unittest.TestCase):
                 return successful_res
             if endpoint == "refresh" and data["accessToken"] == "token":
                 return successful_res
-            if (endpoint == "validate" and data["accessToken"] == "token") \
-                    or endpoint == "join":
+            if (
+                endpoint == "validate" and data["accessToken"] == "token"
+            ) or endpoint == "join":
                 r = requests.Response()
                 r.status_code = 204
                 r.raise_for_status = mock.MagicMock(return_value=None)
@@ -321,8 +320,9 @@ class NormalConnectionProcedure(unittest.TestCase):
             return error_res
 
         # Test a successful sequence of events
-        with mock.patch("minecraft.authentication._make_request",
-                        side_effect=mocked_make_request) as _make_request_mock:
+        with mock.patch(
+            "minecraft.authentication._make_request", side_effect=mocked_make_request
+        ) as _make_request_mock:
 
             self.assertFalse(a.authenticated)
             self.assertTrue(a.authenticate("username", "password"))
@@ -346,40 +346,44 @@ class NormalConnectionProcedure(unittest.TestCase):
 
         # Test that we send a provided clientToken if the authenticationToken
         # is initialized with one
-        with mock.patch("minecraft.authentication._make_request",
-                        side_effect=mocked_make_request) as _make_request_mock:
+        with mock.patch(
+            "minecraft.authentication._make_request", side_effect=mocked_make_request
+        ) as _make_request_mock:
             a = AuthenticationToken(client_token="existing_token")
 
-            self.assertTrue(a.authenticate("username", "password",
-                                           invalidate_previous=False))
+            self.assertTrue(
+                a.authenticate("username", "password", invalidate_previous=False)
+            )
 
             self.assertEqual(_make_request_mock.call_count, 1)
             self.assertEqual(
-                "existing_token",
-                _make_request_mock.call_args[0][2]["clientToken"]
+                "existing_token", _make_request_mock.call_args[0][2]["clientToken"]
             )
 
         # Test that we invalidate previous tokens properly
-        with mock.patch("minecraft.authentication._make_request",
-                        side_effect=mocked_make_request) as _make_request_mock:
+        with mock.patch(
+            "minecraft.authentication._make_request", side_effect=mocked_make_request
+        ) as _make_request_mock:
             a = AuthenticationToken()
 
             self.assertFalse(a.authenticated)
-            self.assertTrue(a.authenticate("username", "password",
-                                           invalidate_previous=True))
+            self.assertTrue(
+                a.authenticate("username", "password", invalidate_previous=True)
+            )
 
             self.assertTrue(a.authenticated)
             self.assertEqual(a.access_token, "token")
             self.assertEqual(_make_request_mock.call_count, 1)
             self.assertNotIn("clientToken", _make_request_mock.call_args[0][2])
 
-        a = AuthenticationToken(username="username",
-                                access_token="token",
-                                client_token="token")
+        a = AuthenticationToken(
+            username="username", access_token="token", client_token="token"
+        )
 
         # Failures
-        with mock.patch("minecraft.authentication._make_request",
-                        return_value=error_res) as _make_request_mock:
+        with mock.patch(
+            "minecraft.authentication._make_request", return_value=error_res
+        ) as _make_request_mock:
             self.assertFalse(a.authenticated)
 
             a.client_token = "token"

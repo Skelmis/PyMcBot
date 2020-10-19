@@ -6,20 +6,20 @@ import sys, traceback
 from pathlib import Path
 import os
 
-import cogs._json
+from utils.jsonLoader import read_json
 
 cwd = Path(__file__).parents[0]
 cwd = str(cwd)
 
-secret_file = cogs._json.read_json("token")
-config_file = cogs._json.read_json("config")
+secret_file = read_json("token")
+config_file = read_json("config")
 
 
 def get_prefix(bot, message):
     return commands.when_mentioned_or(bot.PREFIX)(bot, message)
 
 
-bot = commands.Bot(command_prefix=get_prefix, case_insensitive=True)
+bot = commands.Bot(command_prefix=get_prefix, case_insensitive=True, help_command=None)
 bot.config_token = secret_file["token"]
 
 bot.PREFIX = "--"

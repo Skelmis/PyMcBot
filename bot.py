@@ -1,10 +1,8 @@
+import os
+from pathlib import Path
+
 import discord
 from discord.ext import commands
-import asyncio
-import logging
-import sys, traceback
-from pathlib import Path
-import os
 
 from utils.jsonLoader import read_json
 

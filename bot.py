@@ -16,14 +16,15 @@ config_file = cogs._json.read_json("config")
 
 
 def get_prefix(bot, message):
-    return commands.when_mentioned_or("--")(bot, message)
+    return commands.when_mentioned_or(bot.PREFIX)(bot, message)
 
 
 bot = commands.Bot(command_prefix=get_prefix, case_insensitive=True)
 bot.config_token = secret_file["token"]
 
-bot.account_dict = {}
+bot.PREFIX = "--"
 
+bot.player = None
 bot.server = config_file["server"]
 bot.channel = config_file["channel"]
 bot.username = config_file["username"]

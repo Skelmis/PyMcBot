@@ -1,17 +1,12 @@
+import time
 import asyncio
-import concurrent
+from collections import deque
 
 import discord
 from discord.ext import commands
 from concurrent.futures.thread import ThreadPoolExecutor
 
-from minecraft.exceptions import ProxyConnection, YggdrasilError
-
-from utils.utli import GetMessage
-
-import asyncio
-import time
-from collections import deque
+from minecraft.exceptions import YggdrasilError
 
 from utils.Player import Player
 

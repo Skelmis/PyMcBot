@@ -47,9 +47,7 @@ $ pip install -r requirements.txt
 
 > Invite the bot to your discord and run bot.py
 
----
-
-## Features
+*Note, does not work on all servers. Also requires privileged intents are enabled.*
 
 ---
 

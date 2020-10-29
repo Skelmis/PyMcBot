@@ -8,7 +8,7 @@ from minecraft.exceptions import YggdrasilError
 from minecraft.networking.connection import Connection
 from minecraft.networking.packets import serverbound, clientbound
 
-from Parsers import DefaultParser
+from .Parsers import DefaultParser
 
 
 class Player:

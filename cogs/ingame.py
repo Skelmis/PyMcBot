@@ -186,8 +186,8 @@ class Ingame(commands.Cog):
         except YggdrasilError as e:
             await ctx.send(f"Login failure: `{e}`")
         else:
-            if " " in self.bot.server:
-                ip, port = self.bot.server.split(" ")
+            if ":" in self.bot.server:
+                ip, port = self.bot.server.split(":")
                 player.SetServer(ip, port=int(port))
             else:
                 player.SetServer(self.bot.server)

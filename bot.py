@@ -17,7 +17,7 @@ def get_prefix(bot, message):
     return commands.when_mentioned_or(bot.PREFIX)(bot, message)
 
 
-bot = commands.Bot(command_prefix=get_prefix, case_insensitive=True, help_command=None)
+bot = commands.Bot(command_prefix=get_prefix, case_insensitive=True, help_command=None, intents=discord.Intents.All())
 bot.config_token = secret_file["token"]
 
 bot.PREFIX = "--"

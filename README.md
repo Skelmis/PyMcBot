@@ -3,7 +3,7 @@
 > A Discord <-> Minecraft bot built in python utilising pyCraft.
 
 > Use master branch, all other branches are outdated and no longer actively worked on!
-> Outdated and bad implementation of Pycraft is used within this repo, it will be changed once finished! (Coming very soon)
+> Supports 1.8 <-> 1.16.4
 
 [![Build Status](http://img.shields.io/travis/badges/badgerbadgerbadger.svg?style=flat-square)](https://travis-ci.org/badges/badgerbadgerbadger)
 

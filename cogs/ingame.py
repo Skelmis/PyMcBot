@@ -43,9 +43,9 @@ class PlayerWrapper(Player):
         self.channel = channel
         self.chat_breakout = False
         self.loop = asyncio.get_event_loop()
-        self.ingame_cog.isPycraftInstance = True
+        self.ingame_cog.is_pycraft_instance = True
 
-    def SetServer(self, ip, port=25565, handler=None):
+    def set_server(self, ip, port=25565, handler=None):
         """
         Override the parent SetServer so we can send chats to discord instead
 
@@ -55,9 +55,9 @@ class PlayerWrapper(Player):
             The parent class method we are overriding,
             but then calling within this method.
         """
-        super().SetServer(ip, port=port, handler=self.ReceiveChat)
+        super().set_server(ip, port=port, handler=self.receive_chat)
 
-    def ReceiveChat(self, chat_packet):
+    def receive_chat(self, chat_packet):
         """
         Override the parent ReceiveChat functionality
         so we can send chats to discord instead
@@ -67,14 +67,14 @@ class PlayerWrapper(Player):
         pyCraft.Player.Player.ReceiveChat()
             The parent class method we are overriding here.
         """
-        message = self.Parser(chat_packet.json_data)
+        message = self.parser(chat_packet.json_data)
         if not message:
             # This means our Parser failed to extract the message
             return
 
         self.queue.append(message)
 
-    def HandleChat(self):
+    def handle_chat(self):
         """Handles the queue and sends all relevant chats to discord every second
 
         This queries an internal queue of messages every second, taking up to
@@ -103,7 +103,9 @@ class PlayerWrapper(Player):
 
             if messages != "":
                 self.loop.create_task(
-                    self.ingame_cog.SendChatToDiscord(self.bot, self.channel, messages)
+                    self.ingame_cog.send_chat_to_discord(
+                        self.bot, self.channel, messages
+                    )
                 )
 
 
@@ -112,10 +114,10 @@ class Ingame(commands.Cog):
         self.bot = bot
         self.executor = ThreadPoolExecutor()
         self.player = None
-        self.isPycraftInstance = False
+        self.is_pycraft_instance = False
 
-    async def SendChatToDiscord(self, bot, channel, message):
-        if not self.isPycraftInstance:
+    async def send_chat_to_discord(self, bot, channel, message):
+        if not self.is_pycraft_instance:
             # This should only be used by PlayerWrapper instances
             return
 
@@ -131,7 +133,7 @@ class Ingame(commands.Cog):
         print(f"{self.__class__.__name__} cog has been loaded\n-----")
 
         # Connect the account on ready
-        if self.isPycraftInstance is False and self.bot.player is None:
+        if self.is_pycraft_instance is False and self.bot.player is None:
             channel = await self.bot.fetch_channel(self.bot.channel)
             await self.connect(channel)
 
@@ -151,7 +153,7 @@ class Ingame(commands.Cog):
 
         # TODO clean this content so it sends names rather then <@123413412> etc shit
         # msg = f"{message.author.display_name} -> {message.content}"
-        self.bot.player.SendChat(message.content)
+        self.bot.player.send_chat(message.content)
 
         try:
             await message.delete()
@@ -188,12 +190,12 @@ class Ingame(commands.Cog):
         else:
             if ":" in self.bot.server:
                 ip, port = self.bot.server.split(":")
-                player.SetServer(ip, port=int(port))
+                player.set_server(ip, port=int(port))
             else:
-                player.SetServer(self.bot.server)
+                player.set_server(self.bot.server)
             futures = []
-            futures.append(self.executor.submit(player.Connect))
-            futures.append(self.executor.submit(player.HandleChat))
+            futures.append(self.executor.submit(player.connect))
+            futures.append(self.executor.submit(player.handle_chat))
             self.bot.player = player
             await ctx.send(
                 f"`{self.bot.player.auth_token.username}` should have connected to `{self.bot.server}`",
@@ -229,7 +231,7 @@ class Ingame(commands.Cog):
             return
 
         try:
-            self.bot.player.Disconnect()
+            self.bot.player.disconnect()
         except OSError:
             pass
         self.bot.player = None
@@ -245,7 +247,7 @@ class Ingame(commands.Cog):
             await ctx.send("A connection is not already established.")
             return
 
-        self.bot.player.SendChat(message)
+        self.bot.player.send_chat(message)
 
         await ctx.send(
             f"`{self.bot.player.auth_token.username}` should have said: `{message}`"

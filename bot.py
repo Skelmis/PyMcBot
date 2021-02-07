@@ -4,7 +4,7 @@ from pathlib import Path
 import discord
 from discord.ext import commands
 
-from utils.jsonLoader import read_json
+from utils.json_loader import read_json
 
 cwd = Path(__file__).parents[0]
 cwd = str(cwd)

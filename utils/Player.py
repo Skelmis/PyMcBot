@@ -8,7 +8,7 @@ from minecraft.exceptions import YggdrasilError
 from minecraft.networking.connection import Connection
 from minecraft.networking.packets import serverbound, clientbound
 
-from .Parsers import DefaultParser
+from .Parsers import default_parser
 
 
 class Player:
@@ -54,7 +54,7 @@ class Player:
         self.auth_token = authentication.AuthenticationToken()
         self.auth_token.authenticate(username, password)
 
-    def Parser(self, data):
+    def parser(self, data):
         """
         Converts the chat packet received from the server
         into human readable strings
@@ -70,17 +70,17 @@ class Player:
             The text received from the server in human readable form
 
         """
-        message = DefaultParser(data)  # This is where you would call other parsers
+        message = default_parser(data)  # This is where you would call other parsers
 
         if not message:
             return False
 
         if "teleport" in message.lower():
-            self.HandleTpa(message)
+            self.handle_tpa(message)
 
         return message
 
-    def HandleTpa(self, message):
+    def handle_tpa(self, message):
         """
         Using the given message, figure out whether or not to accept the tpa
 
@@ -95,7 +95,7 @@ class Player:
                 "(.+?) has requested that you teleport to them.", message
             ).group(1)
             if found in self.admins:
-                self.SendChat("/tpyes")
+                self.send_chat("/tpyes")
                 return
         except AttributeError:
             pass
@@ -105,12 +105,12 @@ class Player:
                 1
             )
             if found in self.admins:
-                self.SendChat("/tpyes")
+                self.send_chat("/tpyes")
                 return
         except AttributeError:
             pass
 
-    def SendChat(self, msg):
+    def send_chat(self, msg):
         """
         Send a given message to the server
 
@@ -126,7 +126,7 @@ class Player:
             packet.message = msg
             self.connection.write_packet(packet)
 
-    def ReceiveChat(self, chat_packet):
+    def receive_chat(self, chat_packet):
         """
         The listener for ClientboundChatPackets
 
@@ -138,7 +138,7 @@ class Player:
             The chat packet to pass of to our Parser for handling
 
         """
-        message = self.Parser(chat_packet.json_data)
+        message = self.parser(chat_packet.json_data)
         if not message:
             # This means our Parser failed lol
             print("Parser failed")
@@ -146,7 +146,7 @@ class Player:
 
         print(message)
 
-    def SetServer(self, ip, port=25565, handler=None):
+    def set_server(self, ip, port=25565, handler=None):
         """
         Sets the server, ready for connection
 
@@ -160,7 +160,7 @@ class Player:
             Points to the function used to handle Clientbound chat packets
 
         """
-        handler = handler or self.ReceiveChat
+        handler = handler or self.receive_chat
 
         self.ip = ip
         self.port = port
@@ -174,7 +174,7 @@ class Player:
 
         self.connection.exception_handler(print)
 
-    def Connect(self):
+    def connect(self):
         """
         Actually connect to the server for this player and maintain said connection
 
@@ -192,7 +192,7 @@ class Player:
             if self.kickout:
                 break
 
-    def Disconnect(self):
+    def disconnect(self):
         """
         In order to disconnect the client, and break the blocking loop
         this method must be called
@@ -210,12 +210,12 @@ async def Main():
         print("Incorrect Login", e)
         return
 
-    player.SetServer("Server to connect to.")
+    player.set_server("Server to connect to.")
 
     # We do this to ensure it is non blocking as Connect() is a
     # forever loop used to maintain a connection to a server
     executor = ThreadPoolExecutor()
-    executor.submit(player.Connect)
+    executor.submit(player.connect)
 
     # Forever do things unless the user wants us to logout
     while True:
@@ -223,12 +223,12 @@ async def Main():
 
         # Disconnect the client from the server before finishing everything up
         if message.lower() in ["logout", "disconnected", "exit"]:
-            player.Disconnect()
+            player.disconnect()
             print("Disconnected")
             return
 
         # Send the message to the server via the player
-        player.SendChat(message)
+        player.send_chat(message)
 
 
 # Simply run our program

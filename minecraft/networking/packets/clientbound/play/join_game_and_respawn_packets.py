@@ -57,9 +57,9 @@ class AbstractDimensionPacket(Packet):
 
     def field_string(self, field):
         # pylint: disable=no-member
-        if self.context.protocol_version >= 748 and field == "dimension":
+        if self.context.protocol_later_eq(748) and field == "dimension":
             return nbt_to_snbt(self.dimension)
-        elif self.context.protocol_version < 718 and field == "dimension":
+        elif self.context.protocol_earlier(718) and field == "dimension":
             return Dimension.name_from_value(self.dimension)
         return super(AbstractDimensionPacket, self).field_string(field)
 
@@ -69,21 +69,21 @@ class JoinGamePacket(AbstractDimensionPacket):
     def get_id(context):
         return (
             0x24
-            if context.protocol_version >= 741
+            if context.protocol_later_eq(741)
             else 0x25
-            if context.protocol_version >= 721
+            if context.protocol_later_eq(721)
             else 0x26
-            if context.protocol_version >= 550
+            if context.protocol_later_eq(550)
             else 0x25
-            if context.protocol_version >= 389
+            if context.protocol_later_eq(389)
             else 0x24
-            if context.protocol_version >= 345
+            if context.protocol_later_eq(345)
             else 0x23
-            if context.protocol_version >= 332
+            if context.protocol_later_eq(332)
             else 0x24
-            if context.protocol_version >= 318
+            if context.protocol_later_eq(318)
             else 0x23
-            if context.protocol_version >= 107
+            if context.protocol_later_eq(107)
             else 0x01
         )
 
@@ -91,38 +91,34 @@ class JoinGamePacket(AbstractDimensionPacket):
     get_definition = staticmethod(
         lambda context: [
             {"entity_id": Integer},
-            {"is_hardcore": Boolean} if context.protocol_version >= 738 else {},
+            {"is_hardcore": Boolean} if context.protocol_later_eq(738) else {},
             {"game_mode": UnsignedByte},
             {"previous_game_mode": UnsignedByte}
-            if context.protocol_version >= 730
+            if context.protocol_later_eq(730)
             else {},
             {"world_names": PrefixedArray(VarInt, String)}
-            if context.protocol_version >= 722
+            if context.protocol_later_eq(722)
             else {},
-            {"dimension_codec": NBT} if context.protocol_version >= 718 else {},
+            {"dimension_codec": NBT} if context.protocol_later_eq(718) else {},
             {
                 "dimension": NBT
-                if context.protocol_version >= 748
+                if context.protocol_later_eq(748)
                 else String
-                if context.protocol_version >= 718
+                if context.protocol_later_eq(718)
                 else Integer
-                if context.protocol_version >= 108
+                if context.protocol_later_eq(108)
                 else Byte
             },
-            {"world_name": String} if context.protocol_version >= 722 else {},
-            {"hashed_seed": Long} if context.protocol_version >= 552 else {},
-            {"difficulty": UnsignedByte} if context.protocol_version < 464 else {},
-            {
-                "max_players": VarInt
-                if context.protocol_version >= 749
-                else UnsignedByte
-            },
-            {"level_type": String} if context.protocol_version < 716 else {},
-            {"render_distance": VarInt} if context.protocol_version >= 468 else {},
+            {"world_name": String} if context.protocol_later_eq(722) else {},
+            {"hashed_seed": Long} if context.protocol_later_eq(552) else {},
+            {"difficulty": UnsignedByte} if context.protocol_earlier(464) else {},
+            {"max_players": VarInt if context.protocol_later_eq(749) else UnsignedByte},
+            {"level_type": String} if context.protocol_earlier(716) else {},
+            {"render_distance": VarInt} if context.protocol_later_eq(468) else {},
             {"reduced_debug_info": Boolean},
-            {"respawn_screen": Boolean} if context.protocol_version >= 571 else {},
-            {"is_debug": Boolean} if context.protocol_version >= 716 else {},
-            {"is_flat": Boolean} if context.protocol_version >= 716 else {},
+            {"respawn_screen": Boolean} if context.protocol_later_eq(571) else {},
+            {"is_debug": Boolean} if context.protocol_later_eq(716) else {},
+            {"is_flat": Boolean} if context.protocol_later_eq(716) else {},
         ]
     )
 
@@ -134,7 +130,7 @@ class JoinGamePacket(AbstractDimensionPacket):
     # Can be set or deleted when 'context' is undefined.
     @property
     def game_mode(self):
-        if self.context.protocol_version >= 738:
+        if self.context.protocol_later_eq(738):
             return self._game_mode_738
         else:
             return self._game_mode_0
@@ -153,7 +149,7 @@ class JoinGamePacket(AbstractDimensionPacket):
     # Can be set or deleted when 'context' is undefined.
     @property
     def is_hardcore(self):
-        if self.context.protocol_version >= 738:
+        if self.context.protocol_later_eq(738):
             return self._is_hardcore
         else:
             return bool(self._game_mode_0 & GameMode.HARDCORE)
@@ -178,7 +174,7 @@ class JoinGamePacket(AbstractDimensionPacket):
     # version-independently. Can be set or deleted when 'context' is undefined.
     @property
     def pure_game_mode(self):
-        if self.context.protocol_version >= 738:
+        if self.context.protocol_later_eq(738):
             return self._game_mode_738
         else:
             return self._game_mode_0 & ~GameMode.HARDCORE
@@ -203,31 +199,31 @@ class RespawnPacket(AbstractDimensionPacket):
     def get_id(context):
         return (
             0x39
-            if context.protocol_version >= 741
+            if context.protocol_later_eq(741)
             else 0x3A
-            if context.protocol_version >= 721
+            if context.protocol_later_eq(721)
             else 0x3B
-            if context.protocol_version >= 550
+            if context.protocol_later_eq(550)
             else 0x3A
-            if context.protocol_version >= 471
+            if context.protocol_later_eq(471)
             else 0x38
-            if context.protocol_version >= 461
+            if context.protocol_later_eq(461)
             else 0x39
-            if context.protocol_version >= 451
+            if context.protocol_later_eq(451)
             else 0x38
-            if context.protocol_version >= 389
+            if context.protocol_later_eq(389)
             else 0x37
-            if context.protocol_version >= 352
+            if context.protocol_later_eq(352)
             else 0x36
-            if context.protocol_version >= 345
+            if context.protocol_later_eq(345)
             else 0x35
-            if context.protocol_version >= 336
+            if context.protocol_later_eq(336)
             else 0x34
-            if context.protocol_version >= 332
+            if context.protocol_later_eq(332)
             else 0x35
-            if context.protocol_version >= 318
+            if context.protocol_later_eq(318)
             else 0x33
-            if context.protocol_version >= 70
+            if context.protocol_later_eq(70)
             else 0x07
         )
 
@@ -236,22 +232,22 @@ class RespawnPacket(AbstractDimensionPacket):
         lambda context: [
             {
                 "dimension": NBT
-                if context.protocol_version >= 748
+                if context.protocol_later_eq(748)
                 else String
-                if context.protocol_version >= 718
+                if context.protocol_later_eq(718)
                 else Integer
             },
-            {"world_name": String} if context.protocol_version >= 719 else {},
-            {"difficulty": UnsignedByte} if context.protocol_version < 464 else {},
-            {"hashed_seed": Long} if context.protocol_version >= 552 else {},
+            {"world_name": String} if context.protocol_later_eq(719) else {},
+            {"difficulty": UnsignedByte} if context.protocol_earlier(464) else {},
+            {"hashed_seed": Long} if context.protocol_later_eq(552) else {},
             {"game_mode": UnsignedByte},
             {"previous_game_mode": UnsignedByte}
-            if context.protocol_version >= 730
+            if context.protocol_later_eq(730)
             else {},
-            {"level_type": String} if context.protocol_version < 716 else {},
-            {"is_debug": Boolean} if context.protocol_version >= 716 else {},
-            {"is_flat": Boolean} if context.protocol_version >= 716 else {},
-            {"copy_metadata": Boolean} if context.protocol_version >= 714 else {},
+            {"level_type": String} if context.protocol_earlier(716) else {},
+            {"is_debug": Boolean} if context.protocol_later_eq(716) else {},
+            {"is_flat": Boolean} if context.protocol_later_eq(716) else {},
+            {"copy_metadata": Boolean} if context.protocol_later_eq(714) else {},
         ]
     )
 

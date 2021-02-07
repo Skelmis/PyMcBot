@@ -12,7 +12,7 @@ from minecraft.networking.types import (
 # Formerly known as state_login_serverbound.
 def get_packets(context):
     packets = {LoginStartPacket, EncryptionResponsePacket}
-    if context.protocol_version >= 385:
+    if context.protocol_later_eq(385):
         packets |= {PluginResponsePacket}
     return packets
 
@@ -22,9 +22,9 @@ class LoginStartPacket(Packet):
     def get_id(context):
         return (
             0x00
-            if context.protocol_version >= 391
+            if context.protocol_later_eq(391)
             else 0x01
-            if context.protocol_version >= 385
+            if context.protocol_later_eq(385)
             else 0x00
         )
 
@@ -37,9 +37,9 @@ class EncryptionResponsePacket(Packet):
     def get_id(context):
         return (
             0x01
-            if context.protocol_version >= 391
+            if context.protocol_later_eq(391)
             else 0x02
-            if context.protocol_version >= 385
+            if context.protocol_later_eq(385)
             else 0x01
         )
 
@@ -57,7 +57,7 @@ class PluginResponsePacket(Packet):
 
     @staticmethod
     def get_id(context):
-        return 0x02 if context.protocol_version >= 391 else 0x00
+        return 0x02 if context.protocol_later_eq(391) else 0x00
 
     packet_name = "login plugin response"
     fields = (

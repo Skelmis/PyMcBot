@@ -19,6 +19,7 @@ __all__ = (
     "Short",
     "UnsignedShort",
     "Integer",
+    "FixedPoint",
     "FixedPointInteger",
     "Angle",
     "VarInt",
@@ -137,14 +138,22 @@ class Integer(Type):
         socket.send(struct.pack(">i", value))
 
 
-class FixedPointInteger(Type):
-    @staticmethod
-    def read(file_object):
-        return Integer.read(file_object) / 32
+class FixedPoint(Type):
+    __slots__ = "integer_type", "denominator"
 
-    @staticmethod
-    def send(value, socket):
-        Integer.send(int(value * 32), socket)
+    def __init__(self, integer_type, fractional_bits=5):
+        self.integer_type = integer_type
+        self.denominator = 2 ** fractional_bits
+
+    def read(self, file_object):
+        return self.integer_type.read(file_object) / self.denominator
+
+    def send(self, value, socket):
+        self.integer_type.send(int(value * self.denominator))
+
+
+# This named instance is retained for backward compatibility:
+FixedPointInteger = FixedPoint(Integer)
 
 
 class Angle(Type):
@@ -333,7 +342,7 @@ class Position(Type, Vector):
         location = UnsignedLong.read(file_object)
         x = int(location >> 38)  # 26 most significant bits
 
-        if context.protocol_version >= 443:
+        if context.protocol_later_eq(443):
             z = int((location >> 12) & 0x3FFFFFF)  # 26 intermediate bits
             y = int(location & 0xFFF)  # 12 least signficant bits
         else:
@@ -357,7 +366,7 @@ class Position(Type, Vector):
         x, y, z = position
         value = (
             (x & 0x3FFFFFF) << 38 | (z & 0x3FFFFFF) << 12 | (y & 0xFFF)
-            if context.protocol_version >= 443
+            if context.protocol_later_eq(443)
             else (x & 0x3FFFFFF) << 38 | (y & 0xFFF) << 26 | (z & 0x3FFFFFF)
         )
         UnsignedLong.send(value, socket)

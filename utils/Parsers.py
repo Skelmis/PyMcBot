@@ -14,7 +14,7 @@ DefaultParser - Tested on mc-central, should work decent globally
 # TODO Parse banner messages, example: https://gyazo.com/c0a4cfee23a31fe8b6e4c7c7848e5e5a
 
 
-def DefaultParser(data):
+def default_parser(data):
     """The default Player chat packet parser, designed to make chat human readable.
 
     Parameters

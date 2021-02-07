@@ -8,7 +8,7 @@ class AbstractKeepAlivePacket(Packet):
     get_definition = staticmethod(
         lambda context: [
             {"keep_alive_id": Long}
-            if context.protocol_version >= 339
+            if context.protocol_later_eq(339)
             else {"keep_alive_id": VarInt}
         ]
     )

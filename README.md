@@ -4,7 +4,8 @@
 
 > Use master branch, all other branches are outdated and no longer actively worked on!
 
-> Supports 1.8 -> 1.16.2
+> Supports 1.8 <-> 1.16.4
+
 
 [![Build Status](http://img.shields.io/travis/badges/badgerbadgerbadger.svg?style=flat-square)](https://travis-ci.org/badges/badgerbadgerbadger)
 
@@ -48,9 +49,7 @@ $ pip install -r requirements.txt
 
 > Invite the bot to your discord and run bot.py
 
----
-
-## Features
+*Note, does not work on all servers. Also requires privileged intents are enabled.*
 
 ---
 

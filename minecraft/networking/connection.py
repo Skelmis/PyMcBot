@@ -11,9 +11,14 @@ import re
 
 from .types import VarInt
 from .packets import clientbound, serverbound
-from . import packets
-from . import encryption
-from .. import SUPPORTED_PROTOCOL_VERSIONS, SUPPORTED_MINECRAFT_VERSIONS
+from . import packets, encryption
+from .. import (
+    utility,
+    KNOWN_MINECRAFT_VERSIONS,
+    SUPPORTED_MINECRAFT_VERSIONS,
+    SUPPORTED_PROTOCOL_VERSIONS,
+    PROTOCOL_VERSION_INDICES,
+)
 from ..exceptions import VersionMismatch, LoginDisconnect, IgnorePacket, InvalidState
 
 
@@ -29,6 +34,26 @@ class ConnectionContext(object):
 
     def __init__(self, **kwds):
         self.protocol_version = kwds.get("protocol_version")
+
+    def protocol_earlier(self, other_pv):
+        """Returns True if the protocol version of this context was published
+           earlier than 'other_pv', or else False."""
+        return utility.protocol_earlier(self.protocol_version, other_pv)
+
+    def protocol_earlier_eq(self, other_pv):
+        """Returns True if the protocol version of this context was published
+           earlier than, or is equal to, 'other_pv', or else False."""
+        return utility.protocol_earlier_eq(self.protocol_version, other_pv)
+
+    def protocol_later(self, other_pv):
+        """Returns True if the protocol version of this context was published
+           later than 'other_pv', or else False."""
+        return utility.protocol_earlier(other_pv, self.protocol_version)
+
+    def protocol_later_eq(self, other_pv):
+        """Returns True if the protocol version of this context was published
+           later than, or is equal to, 'other_pv', or else False."""
+        return utility.protocol_earlier_eq(other_pv, self.protocol_version)
 
 
 class _ConnectionOptions(object):
@@ -68,51 +93,41 @@ class Connection(object):
         The connect method needs to be called in order to actually begin
         the connection
 
-        Parameters
-        ----------
-        address
-            address of the server to connect to
-        port : int
-            port of the server to connect to
-        auth_token : `minecraft.authentication.AuthenticationToken`
-            If None, no authentication is attempted and
-            the server is assumed to be running in offline mode.
-        username : str
-            Username string; only applicable in offline mode.
-        initial_version
-            A Minecraft version ID string or protocol
-            version number to use if the server's protocol
-            version cannot be determined. (Although it is
-            now somewhat inaccurate, this name is retained
-            for backward compatibility.)
-        allowed_versions
-            A set of versions, each being a Minecraft
-            version ID string or protocol version number,
-            restricting the versions that the client may
-            use in connecting to the server.
-        handle_exception
-            The final exception handler. This is triggered
-            when an exception occurs in the networking
-            thread that is not caught normally. After
-            any other user-registered exception handlers
-            are run, the final exception (which may be the
-            original exception or one raised by another
-            handler) is passed, regardless of whether or
-            not it was caught by another handler, to the
-            final handler, which may be a function obeying
-            the protocol of 'register_exception_handler';
-            the value 'None', meaning that if the
-            exception was otherwise uncaught, it is
-            re-raised from the networking thread after
-            closing the connection; or the value 'False',
-            meaning that the exception is never re-raised.
-        handle_exit
-            A function to be called when a connection to a
-            server terminates, not caused by an exception,
-            and not with the intention to automatically
-            reconnect. Exceptions raised from this function
-            will be handled by any matching exception handlers.
-
+        :param address: address of the server to connect to
+        :param port(int): port of the server to connect to
+        :param auth_token: :class:`minecraft.authentication.AuthenticationToken`
+                           object. If None, no authentication is attempted and
+                           the server is assumed to be running in offline mode.
+        :param username: Username string; only applicable in offline mode.
+        :param initial_version: A Minecraft version ID string or protocol
+                                version number to use if the server's protocol
+                                version cannot be determined. (Although it is
+                                now somewhat inaccurate, this name is retained
+                                for backward compatibility.)
+        :param allowed_versions: A set of versions, each being a Minecraft
+                                 version ID string or protocol version number,
+                                 restricting the versions that the client may
+                                 use in connecting to the server.
+        :param handle_exception: The final exception handler. This is triggered
+                                 when an exception occurs in the networking
+                                 thread that is not caught normally. After
+                                 any other user-registered exception handlers
+                                 are run, the final exception (which may be the
+                                 original exception or one raised by another
+                                 handler) is passed, regardless of whether or
+                                 not it was caught by another handler, to the
+                                 final handler, which may be a function obeying
+                                 the protocol of 'register_exception_handler';
+                                 the value 'None', meaning that if the
+                                 exception was otherwise uncaught, it is
+                                 re-raised from the networking thread after
+                                 closing the connection; or the value 'False',
+                                 meaning that the exception is never re-raised.
+        :param handle_exit: A function to be called when a connection to a
+                            server terminates, not caused by an exception,
+                            and not with the intention to automatically
+                            reconnect. Exceptions raised from this function
+                            will be handled by any matching exception handlers.
         """  # NOQA
 
         # This lock is re-entrant because it may be acquired in a re-entrant
@@ -144,14 +159,16 @@ class Connection(object):
             allowed_versions = set(map(proto_version, allowed_versions))
             self.allowed_proto_versions = allowed_versions
 
+        latest_allowed_proto = max(
+            self.allowed_proto_versions, key=PROTOCOL_VERSION_INDICES.get
+        )
+
         if initial_version is None:
-            self.default_proto_version = max(self.allowed_proto_versions)
+            self.default_proto_version = latest_allowed_proto
         else:
             self.default_proto_version = proto_version(initial_version)
 
-        self.context = ConnectionContext(
-            protocol_version=max(self.allowed_proto_versions)
-        )
+        self.context = ConnectionContext(protocol_version=latest_allowed_proto)
 
         self.options = _ConnectionOptions()
         self.options.address = address
@@ -197,13 +214,8 @@ class Connection(object):
         If force is false then the packet will be added to the end of the
         packet writing queue to be sent 'as soon as possible'
 
-        Parameters
-        ----------
-        packet : network.packets.Packet
-            The `network.packets.Packet` to write
-        force : bool
-            Specifies if the packet write should be immediate
-
+        :param packet: The :class:`network.packets.Packet` to write
+        :param force(bool): Specifies if the packet write should be immediate
         """
         packet.context = self.context
         if force:
@@ -213,17 +225,12 @@ class Connection(object):
             self._outgoing_packet_queue.append(packet)
 
     def listener(self, *packet_types, **kwds):
-        """Shorthand decorator to register a function as a packet listener.
+        """
+        Shorthand decorator to register a function as a packet listener.
 
         Wraps :meth:`minecraft.networking.connection.register_packet_listener`
-
-        Parameters
-        ----------
-        packet_types
-            Packet types to listen for.
-        kwds
-            Keyword arguments for `register_packet_listener`
-
+        :param packet_types: Packet types to listen for.
+        :param kwds: Keyword arguments for `register_packet_listener`
         """
 
         def listener_decorator(handler_func):
@@ -244,7 +251,8 @@ class Connection(object):
         return exception_handler_decorator
 
     def register_packet_listener(self, method, *packet_types, **kwds):
-        """Registers a listener method which will be notified when a packet of
+        """
+        Registers a listener method which will be notified when a packet of
         a selected type is received.
 
         If :class:`minecraft.networking.connection.IgnorePacket` is raised from
@@ -255,26 +263,16 @@ class Connection(object):
         'outgoing=True', this will prevent the packet from being written to the
         network.
 
-        Parameters
-        ----------
-        method
-            The method which will be called back with the packet
-        packet_types
-            The packets to listen for
-        outgoing
-            If 'True', this listener will be called on outgoing
-            packets just after they are sent to the server, rather
-            than on incoming packets.
-        early
-            If 'True', this listener will be called before any
-            built-in default action is carried out, and before any
-            listeners with 'early=False' are called. If
-            'outgoing=True', the listener will be called before the
-            packet is written to the network, rather than afterwards.
-
-        Returns
-        -------
-
+        :param method: The method which will be called back with the packet
+        :param packet_types: The packets to listen for
+        :param outgoing: If 'True', this listener will be called on outgoing
+                         packets just after they are sent to the server, rather
+                         than on incoming packets.
+        :param early: If 'True', this listener will be called before any
+                      built-in default action is carried out, and before any
+                      listeners with 'early=False' are called. If
+                      'outgoing=True', the listener will be called before the
+                      packet is written to the network, rather than afterwards.
         """
         outgoing = kwds.pop("outgoing", False)
         early = kwds.pop("early", False)
@@ -307,21 +305,18 @@ class Connection(object):
         be set as the 'exception' and 'exc_info' attributes of the
         'Connection'.
 
-        Parameters
-        ----------
-        handler_func
-            A function taking two arguments: the exception
-            object 'e' as in 'except Exception as e:', and the corresponding
-            3-tuple given by 'sys.exc_info()'. The return value of the function is
-            ignored, but any exception raised in it replaces the original
-            exception, and may be passed to later exception handlers.
-        exc_types
-            The types of exceptions that this handler shall
-            catch, as in 'except (exc_type_1, exc_type_2, ...) as e:'. If this is
-            empty, the handler will catch all exceptions.
-        early
-            If 'True', the exception handler is registered before
-            any existing exception handlers in the handling order.
+        :param handler_func: A function taking two arguments: the exception
+        object 'e' as in 'except Exception as e:', and the corresponding
+        3-tuple given by 'sys.exc_info()'. The return value of the function is
+        ignored, but any exception raised in it replaces the original
+        exception, and may be passed to later exception handlers.
+
+        :param exc_types: The types of exceptions that this handler shall
+        catch, as in 'except (exc_type_1, exc_type_2, ...) as e:'. If this is
+        empty, the handler will catch all exceptions.
+
+        :param early: If 'True', the exception handler is registered before
+        any existing exception handlers in the handling order.
         """
         early = kwds.pop("early", False)
         assert not kwds, "Unexpected keyword arguments: %r" % (kwds,)
@@ -365,19 +360,14 @@ class Connection(object):
     def status(self, handle_status=None, handle_ping=False):
         """Issue a status request to the server and then disconnect.
 
-        Parameters
-        ----------
-        handle_status
-            A function to be called with the status
-            dictionary None for the default behaviour of
-            printing the dictionary to standard output, or
-            False to ignore the result.
-        handle_ping
-            A function to be called with the measured latency
-            in milliseconds, None for the default handler,
-            which prints the latency to standard outout, or
-            False, to prevent measurement of the latency.
-
+        :param handle_status: a function to be called with the status
+                              dictionary None for the default behaviour of
+                              printing the dictionary to standard output, or
+                              False to ignore the result.
+        :param handle_ping: a function to be called with the measured latency
+                            in milliseconds, None for the default handler,
+                            which prints the latency to standard outout, or
+                            False, to prevent measurement of the latency.
         """
         with self._write_lock:  # pylint: disable=not-context-manager
             self._check_connection()
@@ -415,7 +405,9 @@ class Connection(object):
             # It is important that this is set correctly even when connecting
             # in status mode, as some servers, e.g. SpigotMC with the
             # ProtocolSupport plugin, use it to determine the correct response.
-            self.context.protocol_version = max(self.allowed_proto_versions)
+            self.context.protocol_version = max(
+                self.allowed_proto_versions, key=PROTOCOL_VERSION_INDICES.get
+            )
 
             self.spawned = False
             self._connect()
@@ -479,14 +471,7 @@ class Connection(object):
 
     def disconnect(self, immediate=False):
         """Terminate the existing server connection, if there is one.
-
-        If 'immediate' is True, do not attempt to write any packets.
-
-        Parameters
-        ----------
-        immediate : bool, optional
-            Whether or not to terminate the existing connection immediately
-
+           If 'immediate' is True, do not attempt to write any packets.
         """
         with self._write_lock:  # pylint: disable=not-context-manager
             self.connected = False
@@ -496,7 +481,9 @@ class Connection(object):
                 while self._pop_packet():
                     pass
 
-            if self.networking_thread is not None:
+            if self.new_networking_thread is not None:
+                self.new_networking_thread.interrupt = True
+            elif self.networking_thread is not None:
                 self.networking_thread.interrupt = True
 
             if self.socket is not None:
@@ -505,6 +492,7 @@ class Connection(object):
                 except socket.error:
                     pass
                 finally:
+                    self.file_object.close()
                     self.socket.close()
                     self.socket = None
 
@@ -518,6 +506,8 @@ class Connection(object):
         self.write_packet(handshake)
 
     def _handle_exception(self, exc, exc_info):
+        final_handler = self.handle_exception
+
         # Call the current PacketReactor's exception handler.
         try:
             if self.reactor.handle_exception(exc, exc_info):
@@ -538,9 +528,9 @@ class Connection(object):
             caught = False
 
         # Call the user-specified final exception handler.
-        if self.handle_exception not in (None, False):
+        if final_handler not in (None, False):
             try:
-                self.handle_exception(exc, exc_info)
+                final_handler(exc, exc_info)
             except Exception as new_exc:
                 exc, exc_info = new_exc, sys.exc_info()
 
@@ -550,18 +540,24 @@ class Connection(object):
         except (TypeError, AttributeError):
             pass
 
-        # Record the exception and cleanly terminate the connection.
+        # Record the exception.
         self.exception, self.exc_info = exc, exc_info
-        self.disconnect(immediate=True)
+
+        # The following condition being false indicates that an exception
+        # handler has initiated a new connection, meaning that we should not
+        # interfere with the connection state. Otherwise, make sure that any
+        # current connection is completely terminated.
+        if (self.new_networking_thread or self.networking_thread).interrupt:
+            self.disconnect(immediate=True)
 
         # If allowed by the final exception handler, re-raise the exception.
-        if self.handle_exception is None and not caught:
+        if final_handler is None and not caught:
             exc_value, exc_tb = exc_info[1:]
             raise exc_value.with_traceback(exc_tb)
 
     def _version_mismatch(self, server_protocol=None, server_version=None):
         if server_protocol is None:
-            server_protocol = SUPPORTED_MINECRAFT_VERSIONS.get(server_version)
+            server_protocol = KNOWN_MINECRAFT_VERSIONS.get(server_version)
 
         if server_protocol is None:
             vs = (
@@ -832,7 +828,7 @@ class PlayingReactor(PacketReactor):
             self.connection.write_packet(keep_alive_packet)
 
         elif packet.packet_name == "player position and look":
-            if self.connection.context.protocol_version >= 107:
+            if self.connection.context.protocol_later_eq(107):
                 teleport_confirm = serverbound.play.TeleportConfirmPacket()
                 teleport_confirm.teleport_id = packet.teleport_id
                 self.connection.write_packet(teleport_confirm)

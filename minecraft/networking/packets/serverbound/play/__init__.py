@@ -36,11 +36,11 @@ def get_packets(context):
         PluginMessagePacket,
         PlayerBlockPlacementPacket,
     }
-    if context.protocol_version >= 69:
+    if context.protocol_later_eq(69):
         packets |= {
             UseItemPacket,
         }
-    if context.protocol_version >= 107:
+    if context.protocol_later_eq(107):
         packets |= {
             TeleportConfirmPacket,
         }
@@ -52,25 +52,25 @@ class KeepAlivePacket(AbstractKeepAlivePacket):
     def get_id(context):
         return (
             0x10
-            if context.protocol_version >= 712
+            if context.protocol_later_eq(712)
             else 0x0F
-            if context.protocol_version >= 471
+            if context.protocol_later_eq(471)
             else 0x10
-            if context.protocol_version >= 464
+            if context.protocol_later_eq(464)
             else 0x0E
-            if context.protocol_version >= 389
+            if context.protocol_later_eq(389)
             else 0x0C
-            if context.protocol_version >= 386
+            if context.protocol_later_eq(386)
             else 0x0B
-            if context.protocol_version >= 345
+            if context.protocol_later_eq(345)
             else 0x0A
-            if context.protocol_version >= 343
+            if context.protocol_later_eq(343)
             else 0x0B
-            if context.protocol_version >= 336
+            if context.protocol_later_eq(336)
             else 0x0C
-            if context.protocol_version >= 318
+            if context.protocol_later_eq(318)
             else 0x0B
-            if context.protocol_version >= 107
+            if context.protocol_later_eq(107)
             else 0x00
         )
 
@@ -80,23 +80,23 @@ class ChatPacket(Packet):
     def get_id(context):
         return (
             0x03
-            if context.protocol_version >= 464
+            if context.protocol_later_eq(464)
             else 0x02
-            if context.protocol_version >= 389
+            if context.protocol_later_eq(389)
             else 0x01
-            if context.protocol_version >= 343
+            if context.protocol_later_eq(343)
             else 0x02
-            if context.protocol_version >= 336
+            if context.protocol_later_eq(336)
             else 0x03
-            if context.protocol_version >= 318
+            if context.protocol_later_eq(318)
             else 0x02
-            if context.protocol_version >= 107
+            if context.protocol_later_eq(107)
             else 0x01
         )
 
     @staticmethod
     def get_max_length(context):
-        return 256 if context.protocol_version >= 306 else 100
+        return 256 if context.protocol_later_eq(306) else 100
 
     @property
     def max_length(self):
@@ -112,27 +112,27 @@ class PositionAndLookPacket(Packet):
     def get_id(context):
         return (
             0x13
-            if context.protocol_version >= 712
+            if context.protocol_later_eq(712)
             else 0x12
-            if context.protocol_version >= 471
+            if context.protocol_later_eq(471)
             else 0x13
-            if context.protocol_version >= 464
+            if context.protocol_later_eq(464)
             else 0x11
-            if context.protocol_version >= 389
+            if context.protocol_later_eq(389)
             else 0x0F
-            if context.protocol_version >= 386
+            if context.protocol_later_eq(386)
             else 0x0E
-            if context.protocol_version >= 345
+            if context.protocol_later_eq(345)
             else 0x0D
-            if context.protocol_version >= 343
+            if context.protocol_later_eq(343)
             else 0x0E
-            if context.protocol_version >= 336
+            if context.protocol_later_eq(336)
             else 0x0F
-            if context.protocol_version >= 332
+            if context.protocol_later_eq(332)
             else 0x0E
-            if context.protocol_version >= 318
+            if context.protocol_later_eq(318)
             else 0x0D
-            if context.protocol_version >= 107
+            if context.protocol_later_eq(107)
             else 0x06
         )
 
@@ -173,33 +173,33 @@ class AnimationPacket(Packet):
     def get_id(context):
         return (
             0x2C
-            if context.protocol_version >= 738
+            if context.protocol_later_eq(738)
             else 0x2B
-            if context.protocol_version >= 712
+            if context.protocol_later_eq(712)
             else 0x2A
-            if context.protocol_version >= 468
+            if context.protocol_later_eq(468)
             else 0x29
-            if context.protocol_version >= 464
+            if context.protocol_later_eq(464)
             else 0x27
-            if context.protocol_version >= 389
+            if context.protocol_later_eq(389)
             else 0x25
-            if context.protocol_version >= 386
+            if context.protocol_later_eq(386)
             else 0x1D
-            if context.protocol_version >= 345
+            if context.protocol_later_eq(345)
             else 0x1C
-            if context.protocol_version >= 343
+            if context.protocol_later_eq(343)
             else 0x1D
-            if context.protocol_version >= 332
+            if context.protocol_later_eq(332)
             else 0x1C
-            if context.protocol_version >= 318
+            if context.protocol_later_eq(318)
             else 0x1A
-            if context.protocol_version >= 107
+            if context.protocol_later_eq(107)
             else 0x0A
         )
 
     packet_name = "animation"
     get_definition = staticmethod(
-        lambda context: [{"hand": VarInt} if context.protocol_version >= 107 else {}]
+        lambda context: [{"hand": VarInt} if context.protocol_later_eq(107) else {}]
     )
 
     Hand = RelativeHand
@@ -211,21 +211,21 @@ class ClientStatusPacket(Packet, Enum):
     def get_id(context):
         return (
             0x04
-            if context.protocol_version >= 464
+            if context.protocol_later_eq(464)
             else 0x03
-            if context.protocol_version >= 389
+            if context.protocol_later_eq(389)
             else 0x02
-            if context.protocol_version >= 343
+            if context.protocol_later_eq(343)
             else 0x03
-            if context.protocol_version >= 336
+            if context.protocol_later_eq(336)
             else 0x04
-            if context.protocol_version >= 318
+            if context.protocol_later_eq(318)
             else 0x03
-            if context.protocol_version >= 80
+            if context.protocol_later_eq(80)
             else 0x02
-            if context.protocol_version >= 67
+            if context.protocol_later_eq(67)
             else 0x17
-            if context.protocol_version >= 49
+            if context.protocol_later_eq(49)
             else 0x16
         )
 
@@ -246,19 +246,19 @@ class PluginMessagePacket(AbstractPluginMessagePacket):
     def get_id(context):
         return (
             0x0B
-            if context.protocol_version >= 464
+            if context.protocol_later_eq(464)
             else 0x0A
-            if context.protocol_version >= 389
+            if context.protocol_later_eq(389)
             else 0x09
-            if context.protocol_version >= 345
+            if context.protocol_later_eq(345)
             else 0x08
-            if context.protocol_version >= 343
+            if context.protocol_later_eq(343)
             else 0x09
-            if context.protocol_version >= 336
+            if context.protocol_later_eq(336)
             else 0x0A
-            if context.protocol_version >= 317
+            if context.protocol_later_eq(317)
             else 0x09
-            if context.protocol_version >= 94
+            if context.protocol_later_eq(94)
             else 0x17
         )
 
@@ -281,27 +281,27 @@ class PlayerBlockPlacementPacket(Packet):
     def get_id(context):
         return (
             0x2E
-            if context.protocol_version >= 738
+            if context.protocol_later_eq(738)
             else 0x2D
-            if context.protocol_version >= 712
+            if context.protocol_later_eq(712)
             else 0x2C
-            if context.protocol_version >= 468
+            if context.protocol_later_eq(468)
             else 0x2B
-            if context.protocol_version >= 464
+            if context.protocol_later_eq(464)
             else 0x29
-            if context.protocol_version >= 389
+            if context.protocol_later_eq(389)
             else 0x27
-            if context.protocol_version >= 386
+            if context.protocol_later_eq(386)
             else 0x1F
-            if context.protocol_version >= 345
+            if context.protocol_later_eq(345)
             else 0x1E
-            if context.protocol_version >= 343
+            if context.protocol_later_eq(343)
             else 0x1F
-            if context.protocol_version >= 332
+            if context.protocol_later_eq(332)
             else 0x1E
-            if context.protocol_version >= 318
+            if context.protocol_later_eq(318)
             else 0x1C
-            if context.protocol_version >= 94
+            if context.protocol_later_eq(94)
             else 0x08
         )
 
@@ -310,14 +310,14 @@ class PlayerBlockPlacementPacket(Packet):
     @staticmethod
     def get_definition(context):
         return [
-            {"hand": VarInt} if context.protocol_version >= 453 else {},
+            {"hand": VarInt} if context.protocol_later_eq(453) else {},
             {"location": Position},
-            {"face": VarInt if context.protocol_version >= 69 else Byte},
-            {"hand": VarInt} if context.protocol_version < 453 else {},
-            {"x": Float if context.protocol_version >= 309 else Byte},
-            {"y": Float if context.protocol_version >= 309 else Byte},
-            {"z": Float if context.protocol_version >= 309 else Byte},
-            ({"inside_block": Boolean} if context.protocol_version >= 453 else {}),
+            {"face": VarInt if context.protocol_later_eq(69) else Byte},
+            {"hand": VarInt} if context.protocol_earlier(453) else {},
+            {"x": Float if context.protocol_later_eq(309) else Byte},
+            {"y": Float if context.protocol_later_eq(309) else Byte},
+            {"z": Float if context.protocol_later_eq(309) else Byte},
+            ({"inside_block": Boolean} if context.protocol_later_eq(453) else {}),
         ]
 
     # PlayerBlockPlacementPacket.Hand is an alias for RelativeHand.
@@ -332,29 +332,29 @@ class UseItemPacket(Packet):
     def get_id(context):
         return (
             0x2F
-            if context.protocol_version >= 738
+            if context.protocol_later_eq(738)
             else 0x2E
-            if context.protocol_version >= 712
+            if context.protocol_later_eq(712)
             else 0x2D
-            if context.protocol_version >= 468
+            if context.protocol_later_eq(468)
             else 0x2C
-            if context.protocol_version >= 464
+            if context.protocol_later_eq(464)
             else 0x2A
-            if context.protocol_version >= 389
+            if context.protocol_later_eq(389)
             else 0x28
-            if context.protocol_version >= 386
+            if context.protocol_later_eq(386)
             else 0x20
-            if context.protocol_version >= 345
+            if context.protocol_later_eq(345)
             else 0x1F
-            if context.protocol_version >= 343
+            if context.protocol_later_eq(343)
             else 0x20
-            if context.protocol_version >= 332
+            if context.protocol_later_eq(332)
             else 0x1F
-            if context.protocol_version >= 318
+            if context.protocol_later_eq(318)
             else 0x1D
-            if context.protocol_version >= 94
+            if context.protocol_later_eq(94)
             else 0x1A
-            if context.protocol_version >= 70
+            if context.protocol_later_eq(70)
             else 0x08
         )
 

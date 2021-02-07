@@ -1,9 +1,11 @@
 # PyMcBot
 
-> A Discord <-> Minecraft bot built in python utilising pyCraft.
+#### A Discord <-> Minecraft bot built in python utilising pyCraft.
 
 > Use master branch, all other branches are outdated and no longer actively worked on!
+
 > Supports 1.8 <-> 1.16.4
+
 
 [![Build Status](http://img.shields.io/travis/badges/badgerbadgerbadger.svg?style=flat-square)](https://travis-ci.org/badges/badgerbadgerbadger)
 

@@ -23,7 +23,7 @@ multidict==4.7.6
 mutf8==1.0.2
 packaging==20.4
 pluggy==0.13.1
-py==1.9.0
+py==1.10.0
 pycparser==2.20
 Pygments==2.7.2
 PyNBT==3.1.0
